@@ -1,5 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Notification Component -->
+    <NotificationComponent />
+    
     <!-- Top Header -->
     <header class="bg-white shadow-sm border-b border-gray-200 fixed w-full top-0 z-50">
       <div class="flex h-16 items-center justify-between px-6">
@@ -53,16 +56,18 @@
               <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
                 <span class="text-primary-700 text-sm font-medium">A</span>
               </div>
-              <span class="hidden md:block text-sm font-medium">Admin User</span>
+              <span class="hidden md:block text-sm font-medium">Admin</span>
               <ChevronDownIcon class="h-4 w-4" />
             </button>
 
             <!-- Profile Dropdown -->
             <div v-if="showProfileMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+              <div class="px-4 py-2 border-b border-gray-100">
+                <p class="text-sm font-medium text-gray-900">Admin User</p>
+                <p class="text-xs text-gray-500">admin@ludus.com</p>
+              </div>
               <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Hồ sơ</NuxtLink>
               <NuxtLink to="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cài đặt</NuxtLink>
-              <hr class="my-1">
-              <button class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Đăng xuất</button>
             </div>
           </div>
         </div>
@@ -163,35 +168,35 @@
 
 <script setup>
 import {
-  HomeIcon,
-  ShoppingBagIcon,
-  ShoppingCartIcon,
-  UsersIcon,
-  ChartBarIcon,
-  CogIcon,
-  DocumentTextIcon,
-  MagnifyingGlassIcon,
-  BellIcon,
-  PlusIcon,
-  ChevronDownIcon,
-  Bars3Icon,
-  TagIcon,
-  GiftIcon,
-  PhotoIcon,
-  StarIcon,
-  CreditCardIcon,
-  MapPinIcon,
-  HeartIcon,
-  ChatBubbleLeftIcon
+  HomeIcon, ShoppingBagIcon, ShoppingCartIcon, UsersIcon, ChartBarIcon,
+  CogIcon, DocumentTextIcon, MagnifyingGlassIcon, BellIcon, PlusIcon,
+  ChevronDownIcon, Bars3Icon, TagIcon, GiftIcon, PhotoIcon, StarIcon,
+  CreditCardIcon, MapPinIcon, HeartIcon, ChatBubbleLeftIcon
 } from '@heroicons/vue/24/outline'
+import NotificationComponent from '~/components/ui/NotificationComponent.vue'
 
-// State
 const route = useRoute()
 const sidebarOpen = ref(false)
 const showProfileMenu = ref(false)
 const searchQuery = ref('')
 
-// Navigation items
+// ĐỌC USER TỪ localStorage (CHỈ TRÊN CLIENT)
+const userInitial = ref('U')
+
+if (process.client) {
+  const saved = localStorage.getItem('admin_user')
+  if (saved) {
+    try {
+      const user = JSON.parse(saved)
+      const name = user.name || user.email?.split('@')[0] || 'User'
+      userInitial.value = name.charAt(0).toUpperCase()
+    } catch (e) {
+      console.error('Lỗi parse admin_user:', e)
+    }
+  }
+}
+
+// Navigation
 const mainNavigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon, badge: null },
   { name: 'Đơn hàng', href: '/orders', icon: ShoppingCartIcon, badge: '12' },
@@ -199,12 +204,9 @@ const mainNavigation = [
 ]
 
 const managementNavigation = [
-  { name: 'Sản phẩm', href: '/products', icon: ShoppingBagIcon },
+  { name: 'Sản phẩm', href: '/product', icon: ShoppingBagIcon },
   { name: 'Danh mục', href: '/category', icon: TagIcon },
-  { name: 'Danh mục con', href: '/subcategory', icon: TagIcon },
   { name: 'Biến thể sản phẩm', href: '/product-variants', icon: DocumentTextIcon },
-//   { name: 'Màu sắc', href: '/colors', icon: PhotoIcon },
-//   { name: 'Kích cỡ', href: '/sizes', icon: DocumentTextIcon },
   { name: 'Hình ảnh SP', href: '/product-images', icon: PhotoIcon },
   { name: 'Đánh giá', href: '/reviews', icon: StarIcon },
 ]
@@ -221,36 +223,27 @@ const toolsNavigation = [
   { name: 'Cài đặt', href: '/settings', icon: CogIcon },
 ]
 
-// Methods
 const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value
 }
 
 const isActive = (href) => {
-  if (href === '/') {
-    return route.path === '/'
-  }
+  if (href === '/') return route.path === '/'
   return route.path.startsWith(href)
 }
 
-// Close sidebar when route changes on mobile
 watch(() => route.path, () => {
   sidebarOpen.value = false
 })
 
-// Close profile menu when clicking outside
 onMounted(() => {
-  const handleClickOutside = (event) => {
-    if (showProfileMenu.value && !event.target.closest('.relative')) {
+  const handleClickOutside = (e) => {
+    if (showProfileMenu.value && !e.target.closest('.relative')) {
       showProfileMenu.value = false
     }
   }
-  
   document.addEventListener('click', handleClickOutside)
-  
-  onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside)
-  })
+  onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 })
 </script>
 

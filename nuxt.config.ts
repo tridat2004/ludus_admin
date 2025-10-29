@@ -1,49 +1,56 @@
-// nuxt.config.ts
+import { fileURLToPath, URL } from 'node:url'
+
 export default defineNuxtConfig({
   devtools: { enabled: true },
   srcDir: 'src/',
-  
-  // Global CSS
+
+  alias: {
+    '@': fileURLToPath(new URL('./src', import.meta.url)),
+    '~': fileURLToPath(new URL('./src', import.meta.url))
+  },
+
   css: [
-    '@/assets/css/main.css'
+    '~/assets/css/main.css'  // Thêm dòng này
   ],
-  
-  // App configuration
+
   app: {
     head: {
       title: 'Ludus Admin - Dashboard Quản Lý',
-      htmlAttrs: {
-        lang: 'vi'
-      },
+      htmlAttrs: { lang: 'vi' },
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Dashboard quản lý e-commerce hiện đại với tính năng quản lý sản phẩm, đơn hàng và khách hàng' },
-        { name: 'keywords', content: 'dashboard, admin, e-commerce, quản lý, sản phẩm, đơn hàng, khách hàng' }
+        {
+          name: 'description',
+          content:
+            'Dashboard quản lý e-commerce hiện đại với tính năng quản lý sản phẩm, đơn hàng và khách hàng'
+        },
+        {
+          name: 'keywords',
+          content:
+            'dashboard, admin, e-commerce, quản lý, sản phẩm, đơn hàng, khách hàng'
+        }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        { 
-          rel: 'stylesheet', 
+        {
+          rel: 'stylesheet',
           href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
         }
       ]
     }
   },
 
-  // Runtime config
   runtimeConfig: {
-    // Private keys (only available on server-side)
     apiSecret: '',
-    
-    // Public keys (exposed to client-side)
     public: {
-      // apiBase: '/api',
       apiBase: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:3000'
+      
     }
   },
+  plugins: ['~/plugins/api.js'],
+  
 
-  // Auto import components
   components: [
     {
       path: '~/components',
@@ -51,20 +58,5 @@ export default defineNuxtConfig({
     }
   ],
 
-  // Modules
-  modules: [
-    '@nuxtjs/tailwindcss',
-    '@pinia/nuxt'
-    // Add modules here if needed
-  ],
-
-  // Build configuration
-  build: {
-    // Build options
-  },
-
-  // Server configuration
-  nitro: {
-    // Server options
-  }
+  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt']
 })

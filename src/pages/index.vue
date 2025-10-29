@@ -12,10 +12,10 @@
           <ArrowPathIcon class="h-4 w-4 mr-2" />
           Làm mới
         </button>
-        <NuxtLink to="/products/create" class="btn btn-primary">
+        <button class="btn btn-primary">
           <PlusIcon class="h-4 w-4 mr-2" />
           Thêm sản phẩm
-        </NuxtLink>
+        </button>
       </div>
     </div>
 
@@ -167,7 +167,8 @@ import {
 } from '@heroicons/vue/24/outline'
 
 definePageMeta({
-  layout: 'default'
+  layout: 'default',
+  plugins: 'auth.client'
 })
 
 const stats = [
