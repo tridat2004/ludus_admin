@@ -51,33 +51,63 @@
                 <div v-if="product.imageUrl && !newImageSelected" class="mb-4">
                   <p class="text-sm font-medium text-gray-700 mb-2">Ảnh hiện tại:</p>
                   <div class="relative inline-block">
-                    <img :src="product.imageUrl" alt="Current" class="w-full max-w-md h-64 object-cover rounded-lg" @error="currentImageError = true">
-                    <div v-if="currentImageError" class="absolute inset-0 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <img 
+                      v-if="!currentImageError"
+                      :src="product.imageUrl" 
+                      alt="Current" 
+                      class="w-full max-w-md h-64 object-cover rounded-lg" 
+                      @error="currentImageError = true"
+                    >
+                    <div v-else class="w-full max-w-md h-64 bg-gray-100 rounded-lg flex items-center justify-center">
                       <div class="text-center">
                         <PhotoIcon class="h-12 w-12 text-gray-400 mx-auto mb-2" />
                         <p class="text-sm text-gray-500">Ảnh không tải được</p>
                       </div>
                     </div>
                   </div>
-                  <button type="button" @click="triggerFileInput" class="mt-3 text-sm text-primary-600 hover:text-primary-700">Thay đổi ảnh</button>
+                  <button 
+                    type="button" 
+                    @click="showImageUpload" 
+                    class="mt-3 px-4 py-2 text-sm bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors"
+                  >
+                    Thay đổi ảnh
+                  </button>
                 </div>
 
                 <!-- Upload New Image -->
-                <div v-if="!product.imageUrl || newImageSelected" @click="triggerFileInput"
-                     @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false" @drop.prevent="handleDrop"
-                     :class="['border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer', isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400']">
+                <div 
+                  v-if="!product.imageUrl || newImageSelected" 
+                  @click="triggerFileInput"
+                  @dragover.prevent="isDragging = true" 
+                  @dragleave.prevent="isDragging = false" 
+                  @drop.prevent="handleDrop"
+                  :class="[
+                    'border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer',
+                    isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400'
+                  ]"
+                >
                   <PhotoIcon class="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p class="text-gray-600 mb-2">Kéo thả hoặc click để upload ảnh mới</p>
                   <p class="text-sm text-gray-500">PNG, JPG, WebP tối đa 10MB</p>
-                  <input ref="fileInput" type="file" accept="image/*" @change="handleFileSelect" class="hidden">
+                  <input 
+                    ref="fileInput" 
+                    type="file" 
+                    accept="image/*" 
+                    @change="handleFileSelect" 
+                    class="hidden"
+                  >
                 </div>
 
-                <!-- Preview -->
+                <!-- Preview New Image -->
                 <div v-if="previewImage" class="mt-4">
                   <p class="text-sm font-medium text-gray-700 mb-2">Ảnh mới:</p>
                   <div class="relative inline-block">
                     <img :src="previewImage" alt="Preview" class="w-full max-w-md h-64 object-cover rounded-lg">
-                    <button type="button" @click="removeNewImage" class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg">
+                    <button 
+                      type="button" 
+                      @click="removeNewImage" 
+                      class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg"
+                    >
                       <XMarkIcon class="h-5 w-5" />
                     </button>
                   </div>
@@ -99,7 +129,9 @@
                   <label class="form-label">Danh mục</label>
                   <select v-model="selectedCategoryId" @change="loadSubcategories" class="form-select">
                     <option value="">Chọn danh mục</option>
-                    <option v-for="cat in categories" :key="cat.id || cat._id" :value="cat.id || cat._id">{{ cat.name }}</option>
+                    <option v-for="cat in categories" :key="cat.id || cat._id" :value="cat.id || cat._id">
+                      {{ cat.name }}
+                    </option>
                   </select>
                 </div>
 
@@ -107,7 +139,9 @@
                   <label class="form-label">Danh mục con</label>
                   <select v-model="form.subcategoryId" class="form-select" :disabled="!selectedCategoryId">
                     <option value="">Chọn danh mục con</option>
-                    <option v-for="sub in filteredSubcategories" :key="sub.id || sub._id" :value="sub.id || sub._id">{{ sub.name }}</option>
+                    <option v-for="sub in filteredSubcategories" :key="sub.id || sub._id" :value="sub.id || sub._id">
+                      {{ sub.name }}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -152,7 +186,9 @@
               <div class="card-body">
                 <div class="flex items-center">
                   <input id="isActive" v-model="form.isActive" type="checkbox" class="h-4 w-4 text-primary-600 rounded">
-                  <label for="isActive" class="ml-2 text-sm text-gray-700">Kích hoạt sản phẩm (hiển thị trên website)</label>
+                  <label for="isActive" class="ml-2 text-sm text-gray-700">
+                    Kích hoạt sản phẩm (hiển thị trên website)
+                  </label>
                 </div>
               </div>
             </div>
@@ -183,7 +219,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, navigateTo } from '#imports'
 import { ArrowLeftIcon, PhotoIcon, XMarkIcon, CheckIcon } from '@heroicons/vue/24/outline'
-import { useNotification } from '../../composables/useNotfication' // ✅ chắc chắn đúng tên
+import { useNotification } from '../../composables/useNotfication'
 import useProduct from '~/composables/useProduct'
 import { useCategory } from '~/composables/useCategory'
 import { useSubCategory } from '~/composables/useSubCategory'
@@ -191,9 +227,10 @@ import { useSubCategory } from '~/composables/useSubCategory'
 definePageMeta({ layout: 'default' })
 
 const route = useRoute()
-const { notify} = useNotification() //
-const success = (msg, timeout = 3000) => notify(msg, 'success', timeout)
-  const error = (msg, timeout = 3000) => notify(msg, 'error', timeout)
+const { notify } = useNotification()
+const success = (msg) => notify(msg, 'success', 3000)
+const error = (msg) => notify(msg, 'error', 4000)
+
 const { getProducts, updateProduct: updateProductApi } = useProduct()
 const { getCategories } = useCategory()
 const { getSubCategories } = useSubCategory()
@@ -205,6 +242,8 @@ const fileInput = ref(null)
 const selectedFile = ref(null)
 const previewImage = ref(null)
 const selectedCategoryId = ref('')
+const newImageSelected = ref(false) // ✅ FIX: Thêm biến này
+const currentImageError = ref(false)
 
 const product = ref(null)
 const categories = ref([])
@@ -248,6 +287,11 @@ const loadSubcategories = () => {
   )
 }
 
+// ✅ FIX: Function to show upload interface
+const showImageUpload = () => {
+  newImageSelected.value = true
+}
+
 // File handling
 const triggerFileInput = () => fileInput.value?.click()
 
@@ -273,6 +317,8 @@ const validateAndSetFile = (file) => {
   }
 
   selectedFile.value = file
+  newImageSelected.value = true
+  
   const reader = new FileReader()
   reader.onload = e => {
     previewImage.value = e.target.result
@@ -283,6 +329,7 @@ const validateAndSetFile = (file) => {
 const removeNewImage = () => {
   selectedFile.value = null
   previewImage.value = null
+  newImageSelected.value = false
   if (fileInput.value) fileInput.value.value = ''
 }
 
@@ -351,7 +398,14 @@ const updateProduct = async () => {
   saving.value = true
   try {
     const payload = { ...form.value }
-    if (selectedFile.value) payload.file = selectedFile.value
+    
+    // Only add file if user selected a new one
+    if (selectedFile.value) {
+      payload.file = selectedFile.value
+      console.log('📷 Updating with new image:', selectedFile.value.name)
+    } else {
+      console.log('📷 Keeping existing image')
+    }
 
     const id = product.value._id || product.value.id
     await updateProductApi(id, payload)
@@ -373,10 +427,21 @@ onMounted(async () => {
 })
 </script>
 
-
 <style scoped>
 .required::after {
   content: " *";
   color: #ef4444;
+}
+
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+}
+
+.btn-primary {
+  @apply bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm hover:shadow;
+}
+
+.btn-secondary {
+  @apply bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 active:bg-gray-100;
 }
 </style>

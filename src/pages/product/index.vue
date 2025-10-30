@@ -7,16 +7,28 @@
         <h1 class="text-2xl font-bold text-gray-900">Quản lý sản phẩm</h1>
         <p class="text-gray-600 mt-1">Quản lý tất cả sản phẩm trong cửa hàng</p>
       </div>
-      <NuxtLink to="/product/create" class="btn btn-primary inline-flex items-center justify-center">
-        <PlusIcon class="h-5 w-5 mr-2" />
-        Thêm sản phẩm
-      </NuxtLink>
+      <div class="flex items-center gap-3">
+        <!-- Bulk Delete Button -->
+        <button
+          v-if="selectedProducts.length > 0"
+          @click="confirmBulkDelete"
+          class="btn btn-danger inline-flex items-center justify-center"
+        >
+          <TrashIcon class="h-5 w-5 mr-2" />
+          Xóa {{ selectedProducts.length }} sản phẩm
+        </button>
+        
+        <NuxtLink to="/product/create" class="btn btn-primary inline-flex items-center justify-center">
+          <PlusIcon class="h-5 w-5 mr-2" />
+          Thêm sản phẩm
+        </NuxtLink>
+      </div>
     </div>
 
     <!-- Filters and search -->
     <div class="card">
       <div class="card-body">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
             <input
@@ -27,35 +39,101 @@
             >
           </div>
           
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Danh mục con</label>
-            <select v-model="selectedCategory" class="form-select">
-              <option value="">Tất cả danh mục con</option>
-              <option v-for="sub in subcategories" :key="sub.id || sub._id" :value="sub.id || sub._id">
-                {{ sub.name }}
-              </option>
-            </select>
-          </div>
+          <!-- ✅ Custom Dropdown với Hover -->
+          <!-- Dropdown chọn danh mục -->
+<div class="relative" ref="categoryDropdown" style="margin-top: 24px;">
+  <button
+    type="button"
+    @click="toggleCategoryDropdown"
+    class="form-select w-full text-left flex items-center justify-between"
+  >
+    <span class="truncate">{{ selectedCategoryLabel }}</span>
+    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
 
-          <div>
+  <!-- Danh mục cha -->
+  <div
+    v-show="showCategoryDropdown"
+    class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-80 overflow-y-auto"
+  >
+    <button
+      type="button"
+      @click="selectCategory('')"
+      class="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
+    >
+      Tất cả danh mục
+    </button>
+
+    <div
+      v-for="cat in categories"
+      :key="cat.id || cat._id"
+      class="relative group border-t border-gray-100 hover:bg-gray-50 transition"
+      @mouseenter="showSubCategory(cat, $event)"
+      @mouseleave="hideSubCategory"
+    >
+      <div class="flex items-center justify-between px-4 py-2 font-semibold text-gray-900 cursor-pointer">
+        <span>{{ cat.name }}</span>
+        <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Bảng danh mục con tách riêng -->
+  <transition name="fade">
+    <div
+      v-if="activeSubCategory && subCategoryPosition"
+      class="fixed z-[60] bg-white border border-gray-300 rounded-lg shadow-2xl w-64"
+      :style="{ top: subCategoryPosition.top + 'px', left: subCategoryPosition.left + 'px' }"
+      @mouseenter="cancelHideSubCategory"
+      @mouseleave="hideSubCategory"
+    >
+      <div class="px-4 py-2 bg-gray-50 border-b font-semibold text-gray-800">
+        Danh mục con của "{{ activeSubCategory.name }}"
+      </div>
+      <div>
+        <button
+          v-for="sub in getSubcategoriesByParent(activeSubCategory.id || activeSubCategory._id)"
+          :key="sub.id || sub._id"
+          @click="selectCategory(sub.id || sub._id)"
+          class="w-full text-left px-4 py-2 hover:bg-primary-50 border-b border-gray-100 text-gray-700"
+        >
+          {{ sub.name }}
+        </button>
+        <div
+          v-if="getSubcategoriesByParent(activeSubCategory.id || activeSubCategory._id).length === 0"
+          class="px-4 py-3 text-sm text-gray-500 italic"
+        >
+          Chưa có danh mục con
+        </div>
+      </div>
+    </div>
+  </transition>
+</div>
+
+
+          <div style="margin-top: -5px;">
             <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-            <select v-model="selectedStatus" class="form-select">
-              <option value="">Tất cả trạng thái</option>
-              <option value="true">Đang bán</option>
-              <option value="false">Ngưng bán</option>
-            </select>
-          </div>
-
-          <div class="flex items-end">
-            <button 
-              @click="resetFilters" 
-              class="btn btn-secondary w-full inline-flex items-center justify-center"
-            >
-              <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Đặt lại bộ lọc
-            </button>
+            <div class="flex gap-2 items-center">
+              <select v-model="selectedStatus" class="form-select flex-1">
+                <option value="">Tất cả trạng thái</option>
+                <option value="true">Đang bán</option>
+                <option value="false">Ngưng bán</option>
+              </select>
+              
+              <button 
+                @click="resetFilters" 
+                class="btn btn-secondary inline-flex items-center justify-center whitespace-nowrap"
+              >
+                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Reset
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -68,6 +146,19 @@
 
     <!-- Products Grid (Card Style) -->
     <div v-else>
+      <!-- Select All -->
+      <div v-if="products.length > 0" class="flex items-center gap-2 mb-4">
+        <input 
+          type="checkbox" 
+          v-model="selectAll"
+          @change="toggleSelectAll"
+          class="h-4 w-4 text-primary-600 rounded"
+        >
+        <label class="text-sm text-gray-700">
+          Chọn tất cả {{ products.length }} sản phẩm
+        </label>
+      </div>
+
       <div v-if="products.length > 0" class="grid grid-cols-1 gap-4">
         <div v-for="product in products" :key="product._id" class="card hover-lift">
           <div class="card-body p-4">
@@ -83,12 +174,12 @@
                 <div 
                   class="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative group"
                 >
-                  <template v-if="product.imageUrl && !imageErrors[product.id]">
+                  <template v-if="product.imageUrl && !imageErrors[product._id]">
                     <img 
                       :src="product.imageUrl" 
                       :alt="product.name" 
                       class="h-full w-full object-cover"
-                      @error="() => handleImageError(product.id)"
+                      @error="() => handleImageError(product._id)"
                       loading="lazy"
                     >
                     <div class="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -100,7 +191,7 @@
                     <div class="h-full w-full flex items-center justify-center bg-gray-50">
                       <div class="text-center">
                         <PhotoIcon class="h-8 w-8 text-gray-300 mx-auto" />
-                        <span v-if="imageErrors[product.id]" class="text-xs text-red-500 block mt-1">Lỗi tải</span>
+                        <span v-if="imageErrors[product._id]" class="text-xs text-red-500 block mt-1">Lỗi tải</span>
                       </div>
                     </div>
                   </template>
@@ -237,7 +328,7 @@
       </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- Delete Single Product Modal -->
     <Modal
       v-model="showDeleteDialog"
       title="Xác nhận xóa"
@@ -261,6 +352,38 @@
         </button>
       </template>
     </Modal>
+
+    <!-- Bulk Delete Modal -->
+    <Modal
+      v-model="showBulkDeleteDialog"
+      title="Xác nhận xóa nhiều sản phẩm"
+      :loading="deleting"
+    >
+      <div class="space-y-4">
+        <p class="text-gray-600">
+          Bạn có chắc chắn muốn xóa <strong>{{ selectedProducts.length }} sản phẩm</strong> đã chọn?
+        </p>
+        <div class="max-h-48 overflow-y-auto bg-gray-50 rounded-lg p-3">
+          <ul class="space-y-1 text-sm">
+            <li v-for="id in selectedProducts" :key="id" class="text-gray-700">
+              • {{ getProductName(id) }}
+            </li>
+          </ul>
+        </div>
+        <p class="text-sm text-red-600 font-medium">
+          ⚠️ Hành động này không thể hoàn tác!
+        </p>
+      </div>
+
+      <template #footer>
+        <button @click="showBulkDeleteDialog = false" class="btn btn-secondary">
+          Hủy
+        </button>
+        <button @click="handleBulkDelete" :disabled="deleting" class="btn btn-danger">
+          {{ deleting ? 'Đang xóa...' : `Xóa ${selectedProducts.length} sản phẩm` }}
+        </button>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -278,7 +401,11 @@ definePageMeta({
   layout: 'default'
 })
 
-const { success, error } = useNotification()
+// ✅ FIX: useNotification đúng cách
+const { notify } = useNotification()
+const success = (msg) => notify(msg, 'success', 3000)
+const error = (msg) => notify(msg, 'error', 4000)
+
 const { getProducts, deleteProduct } = useProduct()
 const { getCategories } = useCategory()
 const { getSubCategories } = useSubCategory()
@@ -295,13 +422,43 @@ const selectedStatus = ref('')
 const selectedProducts = ref([])
 const selectAll = ref(false)
 const showDeleteDialog = ref(false)
+const showBulkDeleteDialog = ref(false)
 const productToDelete = ref(null)
 const imageErrors = ref({})
+
+// ✅ Dropdown states
+const showCategoryDropdown = ref(false)
+const hoveredCategory = ref(null)
+const categoryDropdown = ref(null)
 
 // Pagination - 6 items per page
 const currentPage = ref(1)
 const itemsPerPage = ref(6)
 const totalProducts = ref(0)
+const activeSubCategory = ref(null);
+const subCategoryPosition = ref(null);
+let hideTimeout = null;
+
+const showSubCategory = (cat, event) => {
+  const rect = event.currentTarget.getBoundingClientRect();
+  activeSubCategory.value = cat;
+  subCategoryPosition.value = {
+    top: rect.top,
+    left: rect.right + 10,
+  };
+  clearTimeout(hideTimeout);
+};
+
+const hideSubCategory = () => {
+  hideTimeout = setTimeout(() => {
+    activeSubCategory.value = null;
+    subCategoryPosition.value = null;
+  }, 150);
+};
+
+const cancelHideSubCategory = () => {
+  clearTimeout(hideTimeout);
+};
 
 // Fetch data
 const fetchProducts = async () => {
@@ -316,7 +473,6 @@ const fetchProducts = async () => {
     }
 
     const response = await getProducts(params)
-    // 🔥 lấy đúng cấp
     const apiData = response.data || response
 
     products.value = apiData.data || []
@@ -330,7 +486,6 @@ const fetchProducts = async () => {
     loading.value = false
   }
 }
-
 
 const fetchCategories = async () => {
   try {
@@ -351,6 +506,31 @@ const fetchSubCategories = async () => {
 }
 
 // Computed
+const getSubcategoriesByParent = (parentId) => {
+  return subcategories.value.filter(sub => {
+    const categoryId = sub.categoryId || sub.category?._id || sub.category?.id || sub.category
+    return String(categoryId) === String(parentId)
+  })
+}
+
+const selectedCategoryLabel = computed(() => {
+  if (!selectedCategory.value) return 'Tất cả danh mục'
+  
+  const subcategory = subcategories.value.find(sub => 
+    String(sub.id || sub._id) === String(selectedCategory.value)
+  )
+  
+  if (!subcategory) return 'Tất cả danh mục'
+  
+  const category = categories.value.find(cat => {
+    const catId = cat.id || cat._id
+    const subCatId = subcategory.categoryId || subcategory.category?._id || subcategory.category?.id || subcategory.category
+    return String(catId) === String(subCatId)
+  })
+  
+  return category ? `${category.name} > ${subcategory.name}` : subcategory.name
+})
+
 const totalPages = computed(() => Math.ceil(totalProducts.value / itemsPerPage.value))
 
 const startItem = computed(() => {
@@ -397,6 +577,29 @@ const displayPages = computed(() => {
 })
 
 // Methods
+const toggleCategoryDropdown = () => {
+  showCategoryDropdown.value = !showCategoryDropdown.value
+}
+
+const selectCategory = (categoryId) => {
+  selectedCategory.value = categoryId
+  showCategoryDropdown.value = false
+  hoveredCategory.value = null
+}
+
+const toggleSelectAll = () => {
+  if (selectAll.value) {
+    selectedProducts.value = products.value.map(p => p._id)
+  } else {
+    selectedProducts.value = []
+  }
+}
+
+const getProductName = (productId) => {
+  const product = products.value.find(p => p._id === productId)
+  return product?.name || 'Không xác định'
+}
+
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -444,19 +647,13 @@ const handleImageError = (productId) => {
   }
 }
 
-const toggleSelectAll = () => {
-  if (selectAll.value) {
-    selectedProducts.value = products.value.map(p => p._id)
-  } else {
-    selectedProducts.value = []
-  }
-}
-
 const resetFilters = () => {
   searchQuery.value = ''
   selectedCategory.value = ''
   selectedStatus.value = ''
   currentPage.value = 1
+  showCategoryDropdown.value = false
+  hoveredCategory.value = null
   fetchProducts()
 }
 
@@ -465,12 +662,10 @@ const editProduct = (product) => {
   if (!id) {
     return error('Không tìm thấy ID sản phẩm!')
   }
-  console.log('Navigate to edit product with ID:', id)  // kiểm tra
   navigateTo(`/product/edit?id=${id}`)
 }
 
-
-
+// Single delete
 const confirmDelete = (product) => {
   productToDelete.value = product
   showDeleteDialog.value = true
@@ -495,10 +690,63 @@ const handleDelete = async () => {
   }
 }
 
+// Bulk delete
+const confirmBulkDelete = () => {
+  if (selectedProducts.value.length === 0) {
+    error('Vui lòng chọn ít nhất 1 sản phẩm!')
+    return
+  }
+  showBulkDeleteDialog.value = true
+}
+
+const handleBulkDelete = async () => {
+  if (selectedProducts.value.length === 0) return
+
+  deleting.value = true
+  const totalSelected = selectedProducts.value.length
+  let successCount = 0
+  let failCount = 0
+
+  try {
+    // Xóa từng sản phẩm
+    for (const productId of selectedProducts.value) {
+      try {
+        await deleteProduct(productId)
+        successCount++
+      } catch (err) {
+        console.error(`Failed to delete product ${productId}:`, err)
+        failCount++
+      }
+    }
+
+    // Đóng modal và reset
+    showBulkDeleteDialog.value = false
+    selectedProducts.value = []
+    selectAll.value = false
+    
+    // Refresh danh sách
+    await nextTick()
+    await fetchProducts()
+
+    // Hiển thị kết quả
+    if (failCount === 0) {
+      success(`Xóa thành công ${successCount} sản phẩm!`)
+    } else {
+      error(`Xóa thành công ${successCount}/${totalSelected} sản phẩm. ${failCount} sản phẩm lỗi!`)
+    }
+  } catch (err) {
+    error('Có lỗi xảy ra khi xóa sản phẩm!')
+  } finally {
+    deleting.value = false
+  }
+}
+
 // Watchers
 watch([currentPage, searchQuery, selectedCategory, selectedStatus], () => {
-  // Reset image errors when page changes
   imageErrors.value = {}
+  // ✅ Reset selected products khi filter thay đổi
+  selectedProducts.value = []
+  selectAll.value = false
   fetchProducts()
 })
 
@@ -506,16 +754,43 @@ watch(searchQuery, () => {
   currentPage.value = 1
 })
 
-watch([products, selectedProducts], () => {
-  selectAll.value = products.value.length > 0 && 
-    products.value.every(p => selectedProducts.value.includes(p._id))
+// ✅ FIX: Sync selectAll với selectedProducts
+watch(selectedProducts, () => {
+  if (products.value.length === 0) {
+    selectAll.value = false
+    return
+  }
+  
+  selectAll.value = products.value.every(p => selectedProducts.value.includes(p._id))
 }, { deep: true })
+
+watch(products, () => {
+  // Auto update selectAll khi products thay đổi
+  if (products.value.length === 0) {
+    selectAll.value = false
+    selectedProducts.value = []
+  } else {
+    selectAll.value = products.value.every(p => selectedProducts.value.includes(p._id))
+  }
+})
 
 // Init
 onMounted(() => {
   fetchCategories()
   fetchSubCategories()
   fetchProducts()
+  
+  // ✅ Close dropdown when click outside
+  document.addEventListener('click', (e) => {
+    if (categoryDropdown.value && !categoryDropdown.value.contains(e.target)) {
+      showCategoryDropdown.value = false
+      hoveredCategory.value = null
+    }
+  })
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', () => {})
 })
 </script>
 
@@ -526,6 +801,14 @@ onMounted(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+  transform: translateY(-3px);
+}
+
 
 .btn {
   @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
