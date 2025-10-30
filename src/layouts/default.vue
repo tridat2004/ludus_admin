@@ -54,21 +54,32 @@
           <div class="relative">
             <button @click="showProfileMenu = !showProfileMenu" class="flex items-center space-x-2 text-gray-700 hover:text-gray-900">
               <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-                <span class="text-primary-700 text-sm font-medium">A</span>
-              </div>
-              <span class="hidden md:block text-sm font-medium">Admin</span>
+  <span class="text-primary-700 text-sm font-medium">{{ user.name ? user.name.charAt(0).toUpperCase() : 'A' }}</span>
+</div>
+              <span class="text-sm font-medium">{{ user.name || 'Admin' }}</span>
               <ChevronDownIcon class="h-4 w-4" />
             </button>
 
             <!-- Profile Dropdown -->
-            <div v-if="showProfileMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-              <div class="px-4 py-2 border-b border-gray-100">
-                <p class="text-sm font-medium text-gray-900">Admin User</p>
-                <p class="text-xs text-gray-500">admin@ludus.com</p>
-              </div>
-              <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Hồ sơ</NuxtLink>
-              <NuxtLink to="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cài đặt</NuxtLink>
-            </div>
+            <!-- Profile Dropdown -->
+<div v-if="showProfileMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+  <!-- Thông tin user -->
+  <div class="px-4 py-2 border-b border-gray-100">
+    <p class="text-sm font-medium text-gray-900">{{ user.name }}</p>
+    <p class="text-xs text-gray-500">{{ user.email }}</p>
+  </div>
+
+  <!-- Các link khác -->
+  <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Hồ sơ</NuxtLink>
+  <NuxtLink to="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cài đặt</NuxtLink>
+  <NuxtLink @click.prevent="logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+  Đăng xuất
+</NuxtLink>
+  <!-- Nút đăng xuất -->
+  
+
+</div>
+
           </div>
         </div>
       </div>
@@ -175,6 +186,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import NotificationComponent from '~/components/ui/NotificationComponent.vue'
 
+
 const route = useRoute()
 const sidebarOpen = ref(false)
 const showProfileMenu = ref(false)
@@ -183,17 +195,24 @@ const searchQuery = ref('')
 // ĐỌC USER TỪ localStorage (CHỈ TRÊN CLIENT)
 const userInitial = ref('U')
 
+const user = ref({ name: '', email: '' })
+
 if (process.client) {
   const saved = localStorage.getItem('admin_user')
   if (saved) {
     try {
-      const user = JSON.parse(saved)
-      const name = user.name || user.email?.split('@')[0] || 'User'
-      userInitial.value = name.charAt(0).toUpperCase()
+      Object.assign(user.value, JSON.parse(saved))
     } catch (e) {
       console.error('Lỗi parse admin_user:', e)
     }
   }
+}
+
+// Logout
+const logout = () => {
+  if (process.client) localStorage.removeItem('admin_user')
+  useState('auth_user').value = null
+  window.location.href = '/login'
 }
 
 // Navigation

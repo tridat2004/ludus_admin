@@ -168,7 +168,8 @@ import {
 
 definePageMeta({
   layout: 'default',
-  plugins: 'auth.client'
+  plugins: 'auth.client',
+  middleware: 'auth'
 })
 
 const stats = [

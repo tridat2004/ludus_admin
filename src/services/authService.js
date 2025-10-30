@@ -12,60 +12,93 @@ const getApiInstance = () => {
 
     api = axios.create({
       baseURL,
-      withCredentials: true, // Gửi cookie
+      withCredentials: true,
     })
   }
   return api
 }
 
-const ADMIN_CREDENTIALS = {
-  email: "ngtuyenk4@gmail.com",
-  password: "Pep!3101",
-}
-
-export const autoLoginAdmin = async () => {
+// Login thông thường - user nhập email/password
+export const login = async (email, password) => {
   const api = getApiInstance()
   try {
-    console.log("Auto login admin...")
-
-    // Login
-    await api.post("/auth/login", ADMIN_CREDENTIALS)
-
+    const response = await api.post("/auth/login", { email, password })
+    
     await new Promise(resolve => setTimeout(resolve, 100))
-
-    // Lấy user
-    const response = await api.get("/me")
-    const user = response.data?.data || response.data
+    
+    const userResponse = await api.get("/me")
+    const user = userResponse.data?.data || userResponse.data
 
     if (!user || typeof user !== "object") {
-      throw new Error("Không thể lấy thông tin admin")
+      throw new Error("Không thể lấy thông tin user")
     }
 
-    console.log("Đăng nhập thành công:", user)
-
     if (typeof window !== 'undefined') {
-      localStorage.setItem("admin_user", JSON.stringify(user))
+      localStorage.setItem("user", JSON.stringify(user))
       window.dispatchEvent(new Event("auth-changed"))
     }
 
     return user
   } catch (error) {
-    console.error("API Error in AuthService:", error)
+    console.error("Login error:", error)
     throw new Error(
       error.response?.data?.message ||
       error.message ||
-      "Lỗi không xác định khi đăng nhập"
+      "Lỗi đăng nhập"
     )
   }
 }
 
-export const fetchMe = async () => {
+// Logout
+export const logout = async () => {
   const api = getApiInstance()
   try {
+    await api.post("/auth/logout")
+    
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem("user")
+      window.dispatchEvent(new Event("auth-changed"))
+    }
+  } catch (error) {
+    console.error("Logout error:", error)
+  }
+}
+
+// Kiểm tra session hiện tại
+export const fetchMe = async () => {
+  const api = getApiInstance()
+   if (typeof window !== 'undefined') {
+    const hasSession = document.cookie.includes('token=') || localStorage.getItem('user')
+    if (!hasSession) {
+      console.info('⚠️ Bỏ qua fetchMe vì chưa có session hoặc token')
+      return null
+    }
+  }
+  try {
     const response = await api.get("/me")
-    return response.data?.data || response.data
+    const user = response.data?.data || response.data
+    
+    if (user && typeof window !== 'undefined') {
+      localStorage.setItem("user", JSON.stringify(user))
+    }
+    
+    return user
   } catch (err) {
-    console.error("fetchMe thất bại:", err.message)
+    console.error("fetchMe failed:", err.message)
+    
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem("user")
+    }
+    
     return null
   }
+}
+
+// Lấy user từ localStorage
+export const getStoredUser = () => {
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem("user")
+    return stored ? JSON.parse(stored) : null
+  }
+  return null
 }

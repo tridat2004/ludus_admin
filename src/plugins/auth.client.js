@@ -1,22 +1,27 @@
-import { autoLoginAdmin, fetchMe } from "~/services/authService";
+// plugins/auth.client.js
+import { fetchMe } from "~/services/authService"
 
 export default defineNuxtPlugin(async () => {
-  console.log("🚀 Khởi động plugin auth...");
+  const authState = useState('auth_user')
   
+  // ✅ Nếu đã có user trong localStorage thì set lại luôn, không fetchMe
+  const stored = localStorage.getItem('user')
+  if (stored) {
+    authState.value = JSON.parse(stored)
+    console.log("🔁 Khôi phục user từ localStorage:", authState.value.email)
+    return
+  }
+
+  // ✅ Nếu không có, thử gọi /me để check cookie/session (nếu có)
   try {
-    let user = await fetchMe();
-
-    if (!user) {
-      console.log("🔄 Thử auto login...");
-      user = await autoLoginAdmin();
-    }
-
-    if (!user) {
-      console.error("🚫 Không thể auto login admin");
+    const user = await fetchMe()
+    if (user) {
+      console.log("✅ User đã đăng nhập:", user.email)
+      authState.value = user
     } else {
-      console.log("✅ Admin đã đăng nhập:", user.email);
+      console.log("ℹ️ Chưa có user đăng nhập")
     }
   } catch (error) {
-    console.error("💥 Lỗi trong auth plugin:", error);
+    console.warn("⚠️ Không thể xác thực phiên đăng nhập:", error.message)
   }
-});
+})
