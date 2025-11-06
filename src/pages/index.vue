@@ -8,14 +8,15 @@
       </div>
       
       <div class="flex items-center space-x-3">
-        <button class="btn btn-secondary">
-          <ArrowPathIcon class="h-4 w-4 mr-2" />
-          Làm mới
-        </button>
-        <button class="btn btn-primary">
+       <button class="btn btn-secondary px-5 py-2 text-base rounded-xl">
+  <ArrowPathIcon class="h-6 w-6 mr-2" />
+  Làm mới
+</button>
+
+        <!-- <button class="btn btn-primary">
           <PlusIcon class="h-4 w-4 mr-2" />
           Thêm sản phẩm
-        </button>
+        </button> -->
       </div>
     </div>
 

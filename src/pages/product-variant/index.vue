@@ -7,7 +7,7 @@
       </div>
       <button 
         @click="openAddModal" 
-        class="btn btn-primary"
+        class="btn btn-primary  px-5 py-2 text-base rounded-xl"
         :disabled="!selectedProductId"
       >
         <PlusIcon class="h-5 w-5 mr-2" />
@@ -191,7 +191,7 @@
     <div v-else class="card">
       <div class="card-body text-center py-12">
         <p class="text-gray-500 text-lg mb-4">Chưa có biến thể nào cho sản phẩm này</p>
-        <button @click="openAddModal" class="btn btn-primary">
+        <button @click="openAddModal" class="btn btn-primary  px-5 py-2 text-base rounded-xl">
           <PlusIcon class="h-5 w-5 mr-2" />
           Thêm biến thể đầu tiên
         </button>

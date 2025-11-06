@@ -11,17 +11,17 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          50: '#fef2f2',
-          100: '#fee2e2',
-          200: '#fecaca',
-          300: '#fca5a5',
-          400: '#f87171',
-          500: '#ef4444',
-          600: '#dc2626',
-          700: '#b91c1c',
-          800: '#991b1b',
-          900: '#7f1d1d',
-          950: '#450a0a',
+          50: '#fff4ed',   // Cam nhạt
+          100: '#ffe6d5',  // Cam pastel
+          200: '#feccaa',  // Cam sáng
+          300: '#fdac74',  // Cam vàng
+          400: '#fb8340',  // Cam đậm
+          500: '#f9631d',  // Cam đỏ chính - VỪA PHẢI, HƠI ĐẬM
+          600: '#ea4d13',  // Đỏ cam
+          700: '#c23a12',  // Đỏ cam đậm
+          800: '#9a3116',  // Đỏ nâu
+          900: '#7c2c15',  // Nâu đỏ
+          950: '#431409',  // Nâu đỏ tối
         },
       },
       fontFamily: {

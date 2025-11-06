@@ -6,7 +6,7 @@
         <h1 class="text-2xl font-bold text-gray-900">Quản lý danh mục</h1>
         <p class="text-gray-600">Quản lý danh mục sản phẩm của cửa hàng</p>
       </div>
-      <button @click="openAddModal" class="btn btn-primary">
+      <button @click="openAddModal" class="btn btn-primary  px-5 py-2 text-base rounded-xl">
         <PlusIcon class="h-5 w-5 mr-2" />
         Thêm danh mục
       </button>

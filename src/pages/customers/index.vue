@@ -8,12 +8,19 @@
       </div>
       
       <div class="flex space-x-3">
-        <button @click="exportCustomers" class="btn btn-secondary">
-          <ArrowDownTrayIcon class="h-5 w-5 mr-2" />
+        <button 
+          @click="exportCustomers" 
+          class="btn btn-secondary flex items-center px-5 py-2 text-base rounded-lg shadow-sm hover:shadow-md transition"
+        >
+          <ArrowDownTrayIcon class="h-6 w-6 mr-3" />
           Xuất Excel
         </button>
-        <button @click="showAddCustomerModal = true" class="btn btn-primary">
-          <PlusIcon class="h-5 w-5 mr-2" />
+
+        <button 
+          @click="showAddCustomerModal = true" 
+          class="btn btn-primary flex items-center px-5 py-2 text-base rounded-lg shadow-sm hover:shadow-md transition"
+        >
+          <PlusIcon class="h-6 w-6 mr-3" />
           Thêm khách hàng
         </button>
       </div>
@@ -21,71 +28,82 @@
 
     <!-- Customer stats -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-      <div v-for="stat in customerStats" :key="stat.name" class="card">
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <div class="h-8 w-8 rounded-full flex items-center justify-center"
-              :class="stat.bgColor">
-              <component :is="stat.icon" class="h-5 w-5" :class="stat.iconColor" />
-            </div>
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">{{ stat.name }}</p>
-            <p class="text-2xl font-bold text-gray-900">{{ stat.value }}</p>
-          </div>
-        </div>
-      </div>
+  <div 
+    v-for="stat in customerStats" 
+    :key="stat.name" 
+    class="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center"
+  >
+    <div 
+      class="flex-shrink-0 h-12 w-12 rounded-xl flex items-center justify-center"
+      :class="stat.bgColor"
+    >
+      <component :is="stat.icon" class="h-6 w-6" :class="stat.iconColor" />
     </div>
+
+    <div class="ml-4">
+      <p class="text-sm font-medium text-gray-600 mb-1">{{ stat.name }}</p>
+      <p class="text-2xl font-bold text-gray-900 leading-tight">{{ stat.value }}</p>
+    </div>
+  </div>
+</div>
+
 
     <!-- Filters -->
-    <div class="card">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Tên, email, số điện thoại..."
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-          >
-        </div>
-        
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Loại khách hàng</label>
-          <select 
-            v-model="selectedType"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-          >
-            <option value="">Tất cả</option>
-            <option value="vip">VIP</option>
-            <option value="regular">Thường</option>
-            <option value="new">Mới</option>
-          </select>
-        </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-5 p-5 border border-gray-200 rounded-xl bg-white shadow-sm items-end">
+  <!-- Ô tìm kiếm -->
+  <div class="flex flex-col">
+    <label class="text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
+    <input 
+      type="text" 
+      placeholder="Tên, email, số điện thoại..." 
+      v-model="searchQuery"
+      class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none transition"
+    />
+  </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-          <select 
-            v-model="selectedStatus"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-          >
-            <option value="">Tất cả</option>
-            <option value="active">Hoạt động</option>
-            <option value="inactive">Không hoạt động</option>
-            <option value="blocked">Bị khóa</option>
-          </select>
-        </div>
+  <!-- Loại khách hàng -->
+  <div class="flex flex-col">
+    <label class="text-sm font-medium text-gray-700 mb-2">Loại khách hàng</label>
+    <select 
+      v-model="selectedType"
+      class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none transition"
+    >
+      <option value="">Tất cả</option>
+      <option value="vip">VIP</option>
+      <option value="regular">Thường</option>
+      <option value="new">Mới</option>
+    </select>
+  </div>
 
-        <div class="flex items-end">
-          <button @click="resetFilters" class="btn btn-secondary w-full">
-            Đặt lại
-          </button>
-        </div>
-      </div>
-    </div>
+  <!-- Trạng thái -->
+  <div class="flex flex-col">
+    <label class="text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+    <select 
+      v-model="selectedStatus"
+      class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none transition"
+    >
+      <option value="">Tất cả</option>
+      <option value="active">Hoạt động</option>
+      <option value="inactive">Không hoạt động</option>
+      <option value="blocked">Bị khóa</option>
+    </select>
+  </div>
+
+  <!-- Nút Đặt lại -->
+  <div class="flex justify-end">
+    <button style="width: 10000px;"
+      @click="resetFilters" 
+      class="w-full md:w-auto px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg shadow-sm hover:shadow-md transition"
+    >
+      Đặt lại
+    </button>
+  </div>
+</div>
+
+
 
     <!-- Customers table -->
-    <div class="card">
+    <div class="card rounded-lg">
       <div class="overflow-x-auto">
         <table class="table">
           <thead class="bg-gray-50">
@@ -193,47 +211,57 @@
       </div>
 
       <!-- Pagination -->
-      <div class="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
-        <div class="flex items-center space-x-2">
-          <span class="text-sm text-gray-700">
-            Hiển thị {{ (currentPage - 1) * itemsPerPage + 1 }} đến 
-            {{ Math.min(currentPage * itemsPerPage, totalCustomers) }} 
-            trong tổng số {{ totalCustomers }} khách hàng
-          </span>
-        </div>
-        
-        <div class="flex items-center space-x-2">
-          <button 
-            @click="currentPage--" 
-            :disabled="currentPage === 1"
-            class="btn btn-secondary disabled:opacity-50"
-          >
-            Trước
-          </button>
-          
-          <div class="flex space-x-1">
-            <button 
-              v-for="page in visiblePages" 
-              :key="page"
-              @click="currentPage = page"
-              class="px-3 py-2 text-sm rounded-md"
-              :class="currentPage === page 
-                ? 'bg-primary-600 text-white' 
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'"
-            >
-              {{ page }}
-            </button>
-          </div>
-          
-          <button 
-            @click="currentPage++" 
-            :disabled="currentPage === totalPages"
-            class="btn btn-secondary disabled:opacity-50"
-          >
-            Sau
-          </button>
-        </div>
-      </div>
+      <!-- Pagination (THAY THẾ block cũ bằng block này) -->
+<div class="flex flex-col md:flex-row items-center md:justify-between mt-6 pt-6 border-t border-gray-200">
+  <!-- Left: info -->
+  <div style="padding-left: 20px ;" class="w-full md:w-auto mb-3 md:mb-0">
+    <span class="text-sm text-gray-700">
+      Hiển thị <span class="font-semibold">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> đến 
+      <span class="font-semibold">{{ Math.min(currentPage * itemsPerPage, totalCustomers) }}</span> 
+      trong tổng số <span class="font-semibold">{{ totalCustomers }}</span> khách hàng
+    </span>
+  </div>
+
+  <!-- Right: controls -->
+  <div style="padding-right: 20px; padding-bottom: 15px;" class="w-full md:w-auto flex items-center justify-center md:justify-end space-x-2">
+    <!-- Prev -->
+    <button
+      @click="currentPage--"
+      :disabled="currentPage === 1"
+      :aria-disabled="currentPage === 1"
+      class="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+    >
+      Trước
+    </button>
+
+    <!-- Page numbers (horiz scroll on small screens) -->
+    <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar px-1">
+      <button style="height: 38px;"
+        v-for="page in visiblePages"
+        :key="page"
+        @click="currentPage = page"
+        class="px-3 py-2 text-sm rounded-md whitespace-nowrap transition"
+        :class="currentPage === page
+          ? 'bg-primary-600 text-white border border-primary-600'
+          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'"
+        aria-label="Trang {{ page }}"
+      >
+        {{ page }}
+      </button>
+    </div>
+
+    <!-- Next -->
+    <button
+      @click="currentPage++"
+      :disabled="currentPage === totalPages"
+      :aria-disabled="currentPage === totalPages"
+      class="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+    >
+      Sau
+    </button>
+  </div>
+</div>
+
     </div>
 
     <!-- Add Customer Modal -->
@@ -253,7 +281,7 @@
               v-model="newCustomer.name"
               type="text"
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             >
           </div>
           
@@ -263,7 +291,7 @@
               v-model="newCustomer.email"
               type="email"
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             >
           </div>
           
@@ -273,7 +301,7 @@
               v-model="newCustomer.phone"
               type="tel"
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             >
           </div>
           
@@ -282,7 +310,7 @@
             <textarea
               v-model="newCustomer.address"
               rows="3"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500"
             ></textarea>
           </div>
           

@@ -226,7 +226,7 @@ const managementNavigation = [
   { name: 'Sản phẩm', href: '/product', icon: ShoppingBagIcon },
   { name: 'Danh mục', href: '/category', icon: TagIcon },
 { name: 'Biến thể sản phẩm', href: '/product-variant', icon: DocumentTextIcon },
-  { name: 'Hình ảnh SP', href: '/product-images', icon: PhotoIcon },
+ // { name: 'Hình ảnh SP', href: '/product-images', icon: PhotoIcon },
   { name: 'Đánh giá', href: '/reviews', icon: StarIcon },
 ]
 
