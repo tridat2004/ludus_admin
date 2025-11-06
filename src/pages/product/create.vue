@@ -47,53 +47,119 @@
             </div>
           </div>
 
-          <!-- Product Image -->
+          <!-- Main Product Image (Bắt buộc) -->
           <div class="card">
             <div class="card-header">
-              <h3 class="text-lg font-semibold text-gray-900">Hình ảnh sản phẩm</h3>
+              <h3 class="text-lg font-semibold text-gray-900">Hình ảnh chính</h3>
               <p class="text-sm text-red-600 font-medium">Bắt buộc *</p>
             </div>
             <div class="card-body">
               <div 
-                @click="triggerFileInput"
-                @dragover.prevent="isDragging = true"
-                @dragleave.prevent="isDragging = false"
-                @drop.prevent="handleDrop"
+                @click="triggerMainFileInput"
+                @dragover.prevent="isDraggingMain = true"
+                @dragleave.prevent="isDraggingMain = false"
+                @drop.prevent="handleMainDrop"
                 :class="[
                   'border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer',
-                  isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400'
+                  isDraggingMain ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400'
                 ]"
               >
                 <PhotoIcon class="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p class="text-gray-600 mb-2">Kéo thả hoặc click để upload ảnh</p>
+                <p class="text-gray-600 mb-2">Kéo thả hoặc click để upload ảnh chính</p>
                 <p class="text-sm text-gray-500">PNG, JPG, WebP tối đa 10MB</p>
                 <input 
-                  ref="fileInput"
+                  ref="mainFileInput"
                   type="file" 
                   accept="image/*" 
-                  @change="handleFileSelect"
+                  @change="handleMainFileSelect"
                   class="hidden"
                 >
               </div>
               
-              <!-- Preview Image -->
-              <div v-if="previewImage" class="mt-4">
+              <!-- Preview Main Image -->
+              <div v-if="previewMainImage" class="mt-4">
                 <div class="relative inline-block">
                   <img 
-                    :src="previewImage" 
+                    :src="previewMainImage" 
                     alt="Preview" 
-                    class="w-full max-w-md h-64 object-cover rounded-lg"
+                    class="w-full max-w-md h-64 object-cover rounded-lg border-2 border-primary-500"
                   >
                   <button 
                     type="button"
-                    @click="removeImage"
+                    @click="removeMainImage"
                     class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg"
                   >
                     <XMarkIcon class="h-5 w-5" />
                   </button>
+                  <div class="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded font-semibold">
+                    ẢNH CHÍNH
+                  </div>
                 </div>
-                <p class="text-sm text-gray-600 mt-2">{{ selectedFile?.name }}</p>
-                <p class="text-xs text-gray-500">Kích thước: {{ formatFileSize(selectedFile?.size) }}</p>
+                <p class="text-sm text-gray-600 mt-2">{{ mainFile?.name }}</p>
+                <p class="text-xs text-gray-500">Kích thước: {{ formatFileSize(mainFile?.size) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Images (Tùy chọn, tối đa 9 ảnh) -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="text-lg font-semibold text-gray-900">Hình ảnh bổ sung</h3>
+              <p class="text-sm text-gray-600">Tùy chọn - Tối đa 9 ảnh (sẽ upload sau khi tạo sản phẩm)</p>
+            </div>
+            <div class="card-body">
+              <div 
+                @click="triggerAdditionalFileInput"
+                @dragover.prevent="isDraggingAdditional = true"
+                @dragleave.prevent="isDraggingAdditional = false"
+                @drop.prevent="handleAdditionalDrop"
+                :class="[
+                  'border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer',
+                  isDraggingAdditional ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400'
+                ]"
+              >
+                <PhotoIcon class="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p class="text-gray-600 mb-2">Kéo thả hoặc click để upload nhiều ảnh</p>
+                <p class="text-sm text-gray-500">PNG, JPG, WebP tối đa 10MB mỗi ảnh</p>
+                <p class="text-xs text-primary-600 mt-2">Đã chọn: {{ additionalFiles.length }}/9 ảnh</p>
+                <input 
+                  ref="additionalFileInput"
+                  type="file" 
+                  accept="image/*" 
+                  multiple
+                  @change="handleAdditionalFileSelect"
+                  class="hidden"
+                >
+              </div>
+              
+              <!-- Preview Additional Images Grid -->
+              <div v-if="previewAdditionalImages.length > 0" class="mt-6">
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div 
+                    v-for="(preview, index) in previewAdditionalImages" 
+                    :key="index"
+                    class="relative group"
+                  >
+                    <img 
+                      :src="preview.url" 
+                      :alt="`Preview ${index + 1}`" 
+                      class="w-full h-40 object-cover rounded-lg border-2 border-gray-200"
+                    >
+                    <button 
+                      type="button"
+                      @click="removeAdditionalImage(index)"
+                      class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <XMarkIcon class="h-5 w-5" />
+                    </button>
+                    <div class="absolute bottom-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+                      {{ preview.name }}
+                    </div>
+                    <div class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+                      {{ formatFileSize(preview.size) }}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -356,25 +422,24 @@ definePageMeta({
   layout: 'default'
 })
 
-// ✅ FIX: useNotification trả về { notify }
 const { notify } = useNotification()
-
-// Helper functions
 const showSuccess = (msg) => notify(msg, 'success', 3000)
 const showError = (msg) => notify(msg, 'error', 4000)
-// const showWarning = (msg) => notify(msg, 'warning', 3000)
-// const showInfo = (msg) => notify(msg, 'info', 3000)
 
-const { createProduct } = useProduct()
+const { createProduct, uploadProductImages } = useProduct()
 const { getCategories } = useCategory()
 const { getSubCategories } = useSubCategory()
 
 // State
 const saving = ref(false)
-const isDragging = ref(false)
-const fileInput = ref(null)
-const selectedFile = ref(null)
-const previewImage = ref(null)
+const isDraggingMain = ref(false)
+const isDraggingAdditional = ref(false)
+const mainFileInput = ref(null)
+const additionalFileInput = ref(null)
+const mainFile = ref(null)
+const previewMainImage = ref(null)
+const additionalFiles = ref([])
+const previewAdditionalImages = ref([])
 const sizeInput = ref('')
 const colorInput = ref('')
 const selectedCategoryId = ref('')
@@ -436,7 +501,6 @@ const loadSubcategories = () => {
   formData.value.subcategoryId = ''
 }
 
-// ✅ AUTO-GENERATE SKU
 const generateSKU = () => {
   const prefix = 'SKU'
   const timestamp = Date.now().toString().slice(-8)
@@ -444,54 +508,123 @@ const generateSKU = () => {
   formData.value.productCode = `${prefix}${timestamp}${random}`
 }
 
-// File handling
-const triggerFileInput = () => {
-  fileInput.value?.click()
+// Main Image handling
+const triggerMainFileInput = () => {
+  mainFileInput.value?.click()
 }
 
-const handleFileSelect = (event) => {
+const handleMainFileSelect = (event) => {
   const file = event.target.files[0]
   if (file) {
-    validateAndSetFile(file)
+    validateAndSetMainFile(file)
   }
 }
 
-const handleDrop = (event) => {
-  isDragging.value = false
+const handleMainDrop = (event) => {
+  isDraggingMain.value = false
   const file = event.dataTransfer.files[0]
   if (file) {
-    validateAndSetFile(file)
+    validateAndSetMainFile(file)
   }
 }
 
-const validateAndSetFile = (file) => {
-  // Validate file type
+const validateAndSetMainFile = (file) => {
   if (!file.type.startsWith('image/')) {
     showError('Vui lòng chọn file ảnh!')
     return
   }
 
-  // Validate file size (10MB)
   if (file.size > 10 * 1024 * 1024) {
     showError('File ảnh không được vượt quá 10MB!')
     return
   }
 
-  selectedFile.value = file
+  mainFile.value = file
   
-  // Create preview
   const reader = new FileReader()
   reader.onload = (e) => {
-    previewImage.value = e.target.result
+    previewMainImage.value = e.target.result
   }
   reader.readAsDataURL(file)
 }
 
-const removeImage = () => {
-  selectedFile.value = null
-  previewImage.value = null
-  if (fileInput.value) {
-    fileInput.value.value = ''
+const removeMainImage = () => {
+  mainFile.value = null
+  previewMainImage.value = null
+  if (mainFileInput.value) {
+    mainFileInput.value.value = ''
+  }
+}
+
+// Additional Images handling
+const triggerAdditionalFileInput = () => {
+  if (additionalFiles.value.length >= 9) {
+    showError('Đã đạt giới hạn 9 ảnh!')
+    return
+  }
+  additionalFileInput.value?.click()
+}
+
+const handleAdditionalFileSelect = (event) => {
+  const files = Array.from(event.target.files)
+  if (files.length > 0) {
+    addMultipleFiles(files)
+  }
+}
+
+const handleAdditionalDrop = (event) => {
+  isDraggingAdditional.value = false
+  const files = Array.from(event.dataTransfer.files)
+  if (files.length > 0) {
+    addMultipleFiles(files)
+  }
+}
+
+const addMultipleFiles = (files) => {
+  const maxFiles = 9
+  const remainingSlots = maxFiles - additionalFiles.value.length
+
+  if (remainingSlots <= 0) {
+    showError('Đã đạt giới hạn 9 ảnh!')
+    return
+  }
+
+  const filesToAdd = files.slice(0, remainingSlots)
+  
+  for (const file of filesToAdd) {
+    if (!file.type.startsWith('image/')) {
+      showError(`File ${file.name} không phải là ảnh!`)
+      continue
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      showError(`File ${file.name} vượt quá 10MB!`)
+      continue
+    }
+
+    additionalFiles.value.push(file)
+    
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      previewAdditionalImages.value.push({
+        url: e.target.result,
+        name: file.name,
+        size: file.size
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  if (filesToAdd.length < files.length) {
+    showError(`Chỉ thêm được ${filesToAdd.length} ảnh do giới hạn 9 ảnh!`)
+  }
+}
+
+const removeAdditionalImage = (index) => {
+  additionalFiles.value.splice(index, 1)
+  previewAdditionalImages.value.splice(index, 1)
+  if (additionalFileInput.value) {
+    additionalFileInput.value.value = ''
   }
 }
 
@@ -556,12 +689,12 @@ const saveProduct = async () => {
     return
   }
 
-  if (!selectedFile.value) {
-    showError('Vui lòng chọn hình ảnh sản phẩm!')
+  if (!mainFile.value) {
+    showError('Vui lòng chọn hình ảnh chính cho sản phẩm!')
     return
   }
 
-  // ✅ Auto generate SKU if enabled
+  // Auto generate SKU if enabled
   if (autoGenerateSKU.value && !formData.value.productCode) {
     generateSKU()
   }
@@ -573,36 +706,45 @@ const saveProduct = async () => {
 
   saving.value = true
   try {
-    // ✅ Prepare plain object (useProduct.js sẽ tạo FormData)
+    // Step 1: Create product with main image
     const payload = {
-  name: formData.value.name.trim(),
-  description: formData.value.description?.trim() || '',
-  price: formData.value.price,
-  stockQuantity: formData.value.stockQuantity,
-  productCode: formData.value.productCode.trim(),
-  isActive: formData.value.isActive,
-  sizes: formData.value.sizes?.[0]?.includes(',') 
-           ? formData.value.sizes[0].split(',').map(s => s.trim()) 
-           : formData.value.sizes,
-  colors: formData.value.colors?.[0]?.includes(',') 
-           ? formData.value.colors[0].split(',').map(c => c.trim()) 
-           : formData.value.colors,
-  file: selectedFile.value
-}
+      name: formData.value.name.trim(),
+      description: formData.value.description?.trim() || '',
+      price: formData.value.price,
+      stockQuantity: formData.value.stockQuantity,
+      productCode: formData.value.productCode.trim(),
+      isActive: formData.value.isActive,
+      sizes: formData.value.sizes,
+      colors: formData.value.colors,
+      file: mainFile.value // Main image
+    }
 
+    console.log('📤 Step 1: Creating product with main image...')
+    const createdProduct = await createProduct(formData.value.subcategoryId, payload)
+    const productId = createdProduct._id || createdProduct.id || createdProduct.data?._id || createdProduct.data?.id
 
-    console.log('📤 Submitting product:', {
-      ...payload,
-      file: `[File] ${selectedFile.value.name} (${formatFileSize(selectedFile.value.size)})`
-    })
+    if (!productId) {
+      throw new Error('Không lấy được ID sản phẩm sau khi tạo!')
+    }
 
-    await createProduct(formData.value.subcategoryId, payload)
-    
+    console.log('✅ Product created with ID:', productId)
+
+    // Step 2: Upload additional images if any
+    if (additionalFiles.value.length > 0) {
+      console.log(`📤 Step 2: Uploading ${additionalFiles.value.length} additional images...`)
+      try {
+        await uploadProductImages(productId, additionalFiles.value)
+        console.log('✅ Additional images uploaded successfully')
+      } catch (imgError) {
+        console.error('⚠️ Warning: Failed to upload additional images:', imgError)
+        showError('Tạo sản phẩm thành công nhưng một số ảnh bổ sung tải lên thất bại!')
+      }
+    }
+
     showSuccess('Tạo sản phẩm thành công!')
     navigateTo('/product')
   } catch (err) {
     console.error('❌ Error creating product:', err)
-    console.error('Error details:', err.response?.data)
     showError(err.response?.data?.message || 'Có lỗi xảy ra khi tạo sản phẩm!')
   } finally {
     saving.value = false

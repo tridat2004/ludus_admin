@@ -36,6 +36,7 @@
 </template>
 
 <script setup>
+import { inject, computed } from 'vue'
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -45,7 +46,7 @@ import {
 } from '@heroicons/vue/24/outline'
 
 // ✅ Nuxt auto-import composables - không cần import
-const { message, type, isVisible } = useNotification()
+const { message, type, isVisible } = inject('notification')
 
 const notificationClasses = computed(() => {
   const classes = {

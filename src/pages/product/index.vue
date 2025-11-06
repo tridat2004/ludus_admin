@@ -29,109 +29,163 @@
     <div class="card">
       <div class="card-body">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Search -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Tên sản phẩm, SKU..."
-              class="form-input"
-            >
+            <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
+            <div class="relative">
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Tên sản phẩm, SKU..."
+                class="form-input pl-10"
+              >
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
           </div>
           
-          <!-- ✅ Custom Dropdown với Hover -->
-          <!-- Dropdown chọn danh mục -->
-<div class="relative" ref="categoryDropdown" style="margin-top: 24px;">
-  <button
-    type="button"
-    @click="toggleCategoryDropdown"
-    class="form-select w-full text-left flex items-center justify-between"
-  >
-    <span class="truncate">{{ selectedCategoryLabel }}</span>
-    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-    </svg>
-  </button>
+          <!-- Category Dropdown -->
+          <div class="relative" ref="categoryDropdown">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Danh mục</label>
+            <button
+              type="button"
+              @click="toggleCategoryDropdown"
+              class="form-select w-full text-left flex items-center justify-between bg-white hover:border-primary-500 transition-colors"
+            >
+              <span class="truncate text-gray-700">{{ selectedCategoryLabel }}</span>
+              <svg 
+                class="h-5 w-5 text-gray-400 transition-transform duration-200" 
+                :class="{ 'rotate-180': showCategoryDropdown }"
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
 
-  <!-- Danh mục cha -->
-  <div
-    v-show="showCategoryDropdown"
-    class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-80 overflow-y-auto"
-  >
-    <button
-      type="button"
-      @click="selectCategory('')"
-      class="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
-    >
-      Tất cả danh mục
-    </button>
+            <!-- Parent Categories -->
+            <transition name="dropdown">
+              <div
+                v-show="showCategoryDropdown"
+                class="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-xl max-h-96 overflow-y-auto"
+              >
+                <button
+                  type="button"
+                  @click="selectCategory('')"
+                  :class="[
+                    'w-full text-left px-4 py-3 text-sm font-medium transition-all duration-150',
+                    !selectedCategory ? 'bg-primary-50 text-primary-700 border-l-4 border-primary-600' : 'text-gray-700 hover:bg-gray-50 border-l-4 border-transparent'
+                  ]"
+                >
+                  <div class="flex items-center gap-3">
+                    <svg class="h-5 w-5" :class="!selectedCategory ? 'text-primary-600' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <span>Tất cả danh mục</span>
+                  </div>
+                </button>
 
-    <div
-      v-for="cat in categories"
-      :key="cat.id || cat._id"
-      class="relative group border-t border-gray-100 hover:bg-gray-50 transition"
-      @mouseenter="showSubCategory(cat, $event)"
-      @mouseleave="hideSubCategory"
-    >
-      <div class="flex items-center justify-between px-4 py-2 font-semibold text-gray-900 cursor-pointer">
-        <span>{{ cat.name }}</span>
-        <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
-      </div>
-    </div>
-  </div>
+                <div class="border-t border-gray-100"></div>
 
-  <!-- ✅ Bảng danh mục con tách riêng -->
-  <transition name="fade">
-    <div
-      v-if="activeSubCategory && subCategoryPosition"
-      class="fixed z-[60] bg-white border border-gray-300 rounded-lg shadow-2xl w-64"
-      :style="{ top: subCategoryPosition.top + 'px', left: subCategoryPosition.left + 'px' }"
-      @mouseenter="cancelHideSubCategory"
-      @mouseleave="hideSubCategory"
-    >
-      <div class="px-4 py-2 bg-gray-50 border-b font-semibold text-gray-800">
-        Danh mục con của "{{ activeSubCategory.name }}"
-      </div>
-      <div>
-        <button
-          v-for="sub in getSubcategoriesByParent(activeSubCategory.id || activeSubCategory._id)"
-          :key="sub.id || sub._id"
-          @click="selectCategory(sub.id || sub._id)"
-          class="w-full text-left px-4 py-2 hover:bg-primary-50 border-b border-gray-100 text-gray-700"
-        >
-          {{ sub.name }}
-        </button>
-        <div
-          v-if="getSubcategoriesByParent(activeSubCategory.id || activeSubCategory._id).length === 0"
-          class="px-4 py-3 text-sm text-gray-500 italic"
-        >
-          Chưa có danh mục con
-        </div>
-      </div>
-    </div>
-  </transition>
-</div>
+                <div
+                  v-for="cat in categories"
+                  :key="cat.id || cat._id"
+                  class="relative border-b border-gray-50 last:border-0"
+                  @mouseenter="showSubCategory(cat, $event)"
+                  @mouseleave="hideSubCategory"
+                >
+                  <div class="flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gradient-to-r hover:from-primary-50 hover:to-transparent transition-all duration-150 cursor-pointer group">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-sm">
+                        <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                      </div>
+                      <span>{{ cat.name }}</span>
+                      <span class="text-xs text-gray-500 font-normal bg-gray-100 px-2 py-0.5 rounded-full">
+                        {{ getSubcategoriesByParent(cat.id || cat._id).length }}
+                      </span>
+                    </div>
+                    <svg class="h-5 w-5 text-gray-400 group-hover:text-primary-600 transition-colors duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </transition>
 
+            <!-- Subcategories Panel -->
+            <transition name="slide-fade">
+              <div
+                v-if="activeSubCategory && subCategoryPosition"
+                class="fixed z-[60] bg-white border border-gray-200 rounded-xl shadow-2xl w-72 overflow-hidden"
+                :style="{ top: subCategoryPosition.top + 'px', left: subCategoryPosition.left + 'px' }"
+                @mouseenter="cancelHideSubCategory"
+                @mouseleave="hideSubCategory"
+              >
+                <div class="px-4 py-3 bg-gradient-to-r from-primary-500 to-primary-600">
+                  <div class="flex items-center gap-2 text-white">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    <span class="font-semibold text-sm">{{ activeSubCategory.name }}</span>
+                  </div>
+                </div>
 
-          <div style="margin-top: -5px;">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-            <div class="flex gap-2 items-center">
+                <div class="max-h-80 overflow-y-auto">
+                  <button
+                    v-for="(sub, index) in getSubcategoriesByParent(activeSubCategory.id || activeSubCategory._id)"
+                    :key="sub.id || sub._id"
+                    @click="selectCategory(sub.id || sub._id)"
+                    :class="[
+                      'w-full text-left px-4 py-3 text-sm transition-all duration-150',
+                      (sub.id || sub._id) === selectedCategory 
+                        ? 'bg-primary-50 text-primary-700 font-medium border-l-4 border-primary-600' 
+                        : 'text-gray-700 hover:bg-gray-50 hover:pl-6 border-l-4 border-transparent'
+                    ]"
+                  >
+                    <div class="flex items-center gap-2">
+                      <svg class="h-4 w-4" :class="(sub.id || sub._id) === selectedCategory ? 'text-primary-600' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                      </svg>
+                      <span>{{ sub.name }}</span>
+                    </div>
+                  </button>
+
+                  <div
+                    v-if="getSubcategoriesByParent(activeSubCategory.id || activeSubCategory._id).length === 0"
+                    class="px-4 py-8 text-center"
+                  >
+                    <svg class="h-12 w-12 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                    <p class="text-sm text-gray-500 italic">Chưa có danh mục con</p>
+                  </div>
+                </div>
+              </div>
+            </transition>
+          </div>
+
+          <!-- Status Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+            <div class="flex gap-2">
               <select v-model="selectedStatus" class="form-select flex-1">
                 <option value="">Tất cả trạng thái</option>
                 <option value="true">Đang bán</option>
-                <option value="false">Ngưng bán</option>
+                <option value="false">Ngừng bán</option>
               </select>
               
               <button 
                 @click="resetFilters" 
-                class="btn btn-secondary inline-flex items-center justify-center whitespace-nowrap"
+                class="px-4 py-2 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-primary-500 transition-all duration-200 inline-flex items-center justify-center group"
+                title="Đặt lại bộ lọc"
               >
-                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="h-5 w-5 text-gray-600 group-hover:text-primary-600 group-hover:rotate-180 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                Reset
               </button>
             </div>
           </div>
@@ -144,57 +198,86 @@
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
     </div>
 
-    <!-- Products Grid (Card Style) -->
+    <!-- Products Grid -->
     <div v-else>
       <!-- Select All -->
-      <div v-if="products.length > 0" class="flex items-center gap-2 mb-4">
-        <input 
-          type="checkbox" 
-          v-model="selectAll"
-          @change="toggleSelectAll"
-          class="h-4 w-4 text-primary-600 rounded"
-        >
-        <label class="text-sm text-gray-700">
-          Chọn tất cả {{ products.length }} sản phẩm
-        </label>
-      </div>
+      
 
       <div v-if="products.length > 0" class="grid grid-cols-1 gap-4">
         <div v-for="product in products" :key="product._id" class="card hover-lift">
           <div class="card-body p-4">
             <div class="flex gap-4">
-              <!-- Checkbox & Image -->
+              <!-- Checkbox & Images Gallery -->
               <div class="flex items-start space-x-3">
-                <input 
+                <!-- <input 
                   type="checkbox" 
                   :value="product._id" 
                   v-model="selectedProducts"
                   class="mt-1"
-                >
-                <div 
-                  class="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative group"
-                >
-                  <template v-if="product.imageUrl && !imageErrors[product._id]">
-                    <img 
-                      :src="product.imageUrl" 
-                      :alt="product.name" 
-                      class="h-full w-full object-cover"
-                      @error="() => handleImageError(product._id)"
-                      loading="lazy"
-                    >
-                    <div class="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <PhotoIcon class="h-6 w-6 text-white" />
-                    </div>
-                  </template>
-                  
-                  <template v-else>
-                    <div class="h-full w-full flex items-center justify-center bg-gray-50">
-                      <div class="text-center">
-                        <PhotoIcon class="h-8 w-8 text-gray-300 mx-auto" />
-                        <span v-if="imageErrors[product._id]" class="text-xs text-red-500 block mt-1">Lỗi tải</span>
+                > -->
+                
+                <!-- Image Gallery (Main + Additional) -->
+                <div class="w-32 flex-shrink-0">
+                  <!-- Main Image -->
+                  <div class="relative group mb-2">
+                    <template v-if="product.imageUrl && !imageErrors[product._id + '-main']">
+                      <img 
+                        :src="product.imageUrl" 
+                        :alt="product.name" 
+                        class="w-full h-32 object-cover rounded-lg border-2 border-primary-300"
+                        @error="() => handleImageError(product._id + '-main')"
+                        loading="lazy"
+                      >
+                      <div class="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded font-semibold">
+                        CHÍNH
                       </div>
+                    </template>
+                    <template v-else>
+                      <div class="w-full h-32 flex items-center justify-center bg-gray-50 rounded-lg border-2 border-gray-200">
+                        <PhotoIcon class="h-8 w-8 text-gray-300" />
+                      </div>
+                    </template>
+                  </div>
+
+                  <!-- Additional Images (Small thumbnails) -->
+                  <div v-if="product.productImages && product.productImages.length > 0" class="grid grid-cols-3 gap-1">
+                    <div 
+                      v-for="(img, idx) in product.productImages.slice(0, 6)" 
+                      :key="idx"
+                      class="relative group"
+                    >
+                      <template v-if="!imageErrors[product._id + '-' + idx]">
+                        <img 
+                          :src="img.imageUrl" 
+                          :alt="`${product.name} ${idx + 1}`" 
+                          class="w-full h-10 object-cover rounded border border-gray-200 hover:border-primary-400 transition-colors cursor-pointer"
+                          @error="() => handleImageError(product._id + '-' + idx)"
+                          @click="openImagePreview(product, idx)"
+                          loading="lazy"
+                        >
+                        <!-- Image count overlay on last thumbnail -->
+                        <div 
+                          v-if="idx === 5 && product.productImages.length > 6"
+                          class="absolute inset-0 bg-black bg-opacity-60 rounded flex items-center justify-center text-white text-xs font-bold cursor-pointer"
+                          @click="openImagePreview(product, idx)"
+                        >
+                          +{{ product.productImages.length - 6 }}
+                        </div>
+                      </template>
+                      <template v-else>
+                        <div class="w-full h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+                          <PhotoIcon class="h-3 w-3 text-gray-300" />
+                        </div>
+                      </template>
                     </div>
-                  </template>
+                  </div>
+                  
+                  <!-- Total images count -->
+                  <div v-if="getTotalImages(product) > 0" class="text-center mt-1">
+                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                      📸 {{ getTotalImages(product) }} ảnh
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -244,7 +327,7 @@
                 <!-- Status & Date -->
                 <div class="md:col-span-2">
                   <span class="badge" :class="product.isActive ? 'badge-success' : 'badge-secondary'">
-                    {{ product.isActive ? 'Đang bán' : 'Ngưng bán' }}
+                    {{ product.isActive ? 'Đang bán' : 'Ngừng bán' }}
                   </span>
                   <p class="text-xs text-gray-500 mt-2">{{ formatDate(product.createdAt) }}</p>
                 </div>
@@ -384,6 +467,61 @@
         </button>
       </template>
     </Modal>
+
+    <!-- Image Preview Modal -->
+    <Modal
+      v-model="showImagePreview"
+      title="Xem ảnh sản phẩm"
+      size="large"
+    >
+      <div v-if="previewProduct" class="space-y-4">
+        <h3 class="text-lg font-semibold">{{ previewProduct.name }}</h3>
+        
+        <!-- Main preview image -->
+        <div class="relative">
+          <img 
+            :src="currentPreviewImage" 
+            :alt="previewProduct.name"
+            class="w-full h-96 object-contain bg-gray-50 rounded-lg"
+          >
+        </div>
+
+        <!-- Thumbnails -->
+        <div class="grid grid-cols-6 gap-2">
+          <!-- Main image thumbnail -->
+          <button
+            v-if="previewProduct.imageUrl"
+            @click="currentPreviewImage = previewProduct.imageUrl"
+            :class="[
+              'relative border-2 rounded-lg overflow-hidden transition-all',
+              currentPreviewImage === previewProduct.imageUrl ? 'border-primary-500 ring-2 ring-primary-200' : 'border-gray-200 hover:border-primary-300'
+            ]"
+          >
+            <img :src="previewProduct.imageUrl" class="w-full h-16 object-cover">
+            <div class="absolute top-0 left-0 bg-green-500 text-white text-[8px] px-1 rounded-br">CHÍNH</div>
+          </button>
+
+          <!-- Additional images thumbnails -->
+          <button
+            v-for="(img, idx) in previewProduct.productImages"
+            :key="idx"
+            @click="currentPreviewImage = img.imageUrl"
+            :class="[
+              'border-2 rounded-lg overflow-hidden transition-all',
+              currentPreviewImage === img.imageUrl ? 'border-primary-500 ring-2 ring-primary-200' : 'border-gray-200 hover:border-primary-300'
+            ]"
+          >
+            <img :src="img.imageUrl" class="w-full h-16 object-cover">
+          </button>
+        </div>
+      </div>
+
+      <template #footer>
+        <button @click="showImagePreview = false" class="btn btn-primary">
+          Đóng
+        </button>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -401,7 +539,6 @@ definePageMeta({
   layout: 'default'
 })
 
-// ✅ FIX: useNotification đúng cách
 const { notify } = useNotification()
 const success = (msg) => notify(msg, 'success', 3000)
 const error = (msg) => notify(msg, 'error', 4000)
@@ -425,40 +562,42 @@ const showDeleteDialog = ref(false)
 const showBulkDeleteDialog = ref(false)
 const productToDelete = ref(null)
 const imageErrors = ref({})
+const showImagePreview = ref(false)
+const previewProduct = ref(null)
+const currentPreviewImage = ref('')
 
-// ✅ Dropdown states
+// Dropdown states
 const showCategoryDropdown = ref(false)
-const hoveredCategory = ref(null)
 const categoryDropdown = ref(null)
 
-// Pagination - 6 items per page
+// Pagination
 const currentPage = ref(1)
 const itemsPerPage = ref(6)
 const totalProducts = ref(0)
-const activeSubCategory = ref(null);
-const subCategoryPosition = ref(null);
-let hideTimeout = null;
+const activeSubCategory = ref(null)
+const subCategoryPosition = ref(null)
+let hideTimeout = null
 
 const showSubCategory = (cat, event) => {
-  const rect = event.currentTarget.getBoundingClientRect();
-  activeSubCategory.value = cat;
+  const rect = event.currentTarget.getBoundingClientRect()
+  activeSubCategory.value = cat
   subCategoryPosition.value = {
     top: rect.top,
     left: rect.right + 10,
-  };
-  clearTimeout(hideTimeout);
-};
+  }
+  clearTimeout(hideTimeout)
+}
 
 const hideSubCategory = () => {
   hideTimeout = setTimeout(() => {
-    activeSubCategory.value = null;
-    subCategoryPosition.value = null;
-  }, 150);
-};
+    activeSubCategory.value = null
+    subCategoryPosition.value = null
+  }, 150)
+}
 
 const cancelHideSubCategory = () => {
-  clearTimeout(hideTimeout);
-};
+  clearTimeout(hideTimeout)
+}
 
 // Fetch data
 const fetchProducts = async () => {
@@ -584,7 +723,6 @@ const toggleCategoryDropdown = () => {
 const selectCategory = (categoryId) => {
   selectedCategory.value = categoryId
   showCategoryDropdown.value = false
-  hoveredCategory.value = null
 }
 
 const toggleSelectAll = () => {
@@ -598,6 +736,12 @@ const toggleSelectAll = () => {
 const getProductName = (productId) => {
   const product = products.value.find(p => p._id === productId)
   return product?.name || 'Không xác định'
+}
+
+const getTotalImages = (product) => {
+  let count = product.imageUrl ? 1 : 0
+  count += product.productImages?.length || 0
+  return count
 }
 
 const formatCurrency = (amount) => {
@@ -640,11 +784,23 @@ const getCategoryName = (subcategoryId) => {
   return category ? `${category.name} > ${subcategory.name}` : subcategory.name
 }
 
-const handleImageError = (productId) => {
-  imageErrors.value[productId] = true
-  if (process.env.NODE_ENV === 'development') {
-    console.warn(`⚠️ Image load failed for product: ${productId}`)
+const handleImageError = (key) => {
+  imageErrors.value[key] = true
+}
+
+const openImagePreview = (product, startIndex = 0) => {
+  previewProduct.value = product
+  
+  // Set initial preview image
+  if (startIndex === 0 && product.imageUrl) {
+    currentPreviewImage.value = product.imageUrl
+  } else if (product.productImages && product.productImages[startIndex]) {
+    currentPreviewImage.value = product.productImages[startIndex].imageUrl
+  } else if (product.imageUrl) {
+    currentPreviewImage.value = product.imageUrl
   }
+  
+  showImagePreview.value = true
 }
 
 const resetFilters = () => {
@@ -653,7 +809,6 @@ const resetFilters = () => {
   selectedStatus.value = ''
   currentPage.value = 1
   showCategoryDropdown.value = false
-  hoveredCategory.value = null
   fetchProducts()
 }
 
@@ -708,7 +863,6 @@ const handleBulkDelete = async () => {
   let failCount = 0
 
   try {
-    // Xóa từng sản phẩm
     for (const productId of selectedProducts.value) {
       try {
         await deleteProduct(productId)
@@ -719,16 +873,13 @@ const handleBulkDelete = async () => {
       }
     }
 
-    // Đóng modal và reset
     showBulkDeleteDialog.value = false
     selectedProducts.value = []
     selectAll.value = false
     
-    // Refresh danh sách
     await nextTick()
     await fetchProducts()
 
-    // Hiển thị kết quả
     if (failCount === 0) {
       success(`Xóa thành công ${successCount} sản phẩm!`)
     } else {
@@ -744,7 +895,6 @@ const handleBulkDelete = async () => {
 // Watchers
 watch([currentPage, searchQuery, selectedCategory, selectedStatus], () => {
   imageErrors.value = {}
-  // ✅ Reset selected products khi filter thay đổi
   selectedProducts.value = []
   selectAll.value = false
   fetchProducts()
@@ -754,7 +904,6 @@ watch(searchQuery, () => {
   currentPage.value = 1
 })
 
-// ✅ FIX: Sync selectAll với selectedProducts
 watch(selectedProducts, () => {
   if (products.value.length === 0) {
     selectAll.value = false
@@ -765,7 +914,6 @@ watch(selectedProducts, () => {
 }, { deep: true })
 
 watch(products, () => {
-  // Auto update selectAll khi products thay đổi
   if (products.value.length === 0) {
     selectAll.value = false
     selectedProducts.value = []
@@ -780,11 +928,9 @@ onMounted(() => {
   fetchSubCategories()
   fetchProducts()
   
-  // ✅ Close dropdown when click outside
   document.addEventListener('click', (e) => {
     if (categoryDropdown.value && !categoryDropdown.value.contains(e.target)) {
       showCategoryDropdown.value = false
-      hoveredCategory.value = null
     }
   })
 })
@@ -801,14 +947,36 @@ onUnmounted(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-  transform: translateY(-3px);
+
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.2s ease-out;
 }
 
+.dropdown-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.2s ease-out;
+}
+
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-5px);
+}
 
 .btn {
   @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
@@ -824,5 +992,14 @@ onUnmounted(() => {
 
 .btn-danger {
   @apply bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm hover:shadow;
+}
+
+.hover-lift {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 </style>

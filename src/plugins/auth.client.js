@@ -3,25 +3,21 @@ import { fetchMe } from "~/services/authService"
 
 export default defineNuxtPlugin(async () => {
   const authState = useState('auth_user')
-  
-  // ✅ Nếu đã có user trong localStorage thì set lại luôn, không fetchMe
-  const stored = localStorage.getItem('user')
-  if (stored) {
-    authState.value = JSON.parse(stored)
-    console.log("🔁 Khôi phục user từ localStorage:", authState.value.email)
-    return
-  }
 
-  // ✅ Nếu không có, thử gọi /me để check cookie/session (nếu có)
   try {
-    const user = await fetchMe()
+    const user = await fetchMe() // check server session/cookie
     if (user) {
-      console.log("✅ User đã đăng nhập:", user.email)
       authState.value = user
+      console.log("✅ User đã đăng nhập:", user.email)
     } else {
-      console.log("ℹ️ Chưa có user đăng nhập")
+      console.log("❌ Chưa đăng nhập hoặc session hết hạn")
+      authState.value = null
+      localStorage.removeItem('user')
     }
   } catch (error) {
     console.warn("⚠️ Không thể xác thực phiên đăng nhập:", error.message)
+    authState.value = null
+    localStorage.removeItem('user')
   }
 })
+

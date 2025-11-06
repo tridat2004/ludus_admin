@@ -1,20 +1,18 @@
 <!-- pages/login.vue -->
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
     <div class="max-w-md w-full">
       <!-- Logo/Brand -->
       <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-full mb-4">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
+        <div class="inline-flex items-center justify-center mb-4">
+          <img src="/logo_ludus.jpg" alt="Ludus Logo" class="h-16" />
         </div>
-        <h2 class="text-3xl font-bold text-gray-900">Admin Login</h2>
-        <p class="mt-2 text-sm text-gray-600">Đăng nhập để quản lý hệ thống</p>
+        
+        <!-- <p class="mt-2 text-sm text-gray-600">Đăng nhập để quản lý hệ thống</p> -->
       </div>
 
       <!-- Form Card -->
-      <div class="bg-white rounded-2xl shadow-xl p-8">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
         <form @submit.prevent="handleLogin" class="space-y-6">
           <!-- Error Message -->
           <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
@@ -41,7 +39,7 @@
                 type="email"
                 required
                 autocomplete="email"
-                class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors text-sm"
                 placeholder="admin@example.com"
                 :disabled="loading"
               />
@@ -65,7 +63,7 @@
                 :type="showPassword ? 'text' : 'password'"
                 required
                 autocomplete="current-password"
-                class="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                class="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors text-sm"
                 placeholder="••••••••"
                 :disabled="loading"
               />
@@ -90,7 +88,7 @@
           <button
             type="submit"
             :disabled="loading"
-            class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <svg v-if="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -104,7 +102,7 @@
 
       <!-- Footer -->
       <p class="mt-8 text-center text-xs text-gray-500">
-        © 2024 Admin Panel. All rights reserved.
+        © 2025 Ludus Admin. All rights reserved.
       </p>
     </div>
   </div>
@@ -116,11 +114,11 @@ import { login } from '~/services/authService'
 // Ngăn user đã login vào lại trang login
 definePageMeta({
   layout: 'auth',
-  //middleware :'guest' // dùng layout auth thay vì layout mặc định (admin)
+  middleware : 'auth'
 })
 
 const router = useRouter()
-const route = useRoute()
+
 
 const formData = reactive({
   email: '',
@@ -157,6 +155,8 @@ onMounted(() => {
   document.getElementById('email')?.focus()
 })
 </script>
+
+
 
 <style scoped>
 @keyframes slideUp {

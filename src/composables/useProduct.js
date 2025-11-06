@@ -12,8 +12,6 @@ export default () => {
         }
     }
 
-    
-
     const createProduct = async (categoryId, data) => {
         try {
             const formData = new FormData()
@@ -78,6 +76,27 @@ export default () => {
         }
     }
 
+    const uploadProductImages = async (productId, files) => {
+        try {
+            const formData = new FormData()
+            
+            // Append multiple files
+            files.forEach(file => {
+                formData.append('files', file)
+            })
+
+            const res = await $api.post(`/product/upload-images/${productId}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            return res.data || res
+        } catch (error) {
+            console.error('uploadProductImages error:', error)
+            throw error
+        }
+    }
+
     const getCategoriesAndSubcategories = async () => {
         try {
             const res = await $api.get('/product/categories-subcategories')
@@ -90,10 +109,10 @@ export default () => {
 
     return {
         getProducts,
-        
         createProduct,
         updateProduct,
         deleteProduct,
+        uploadProductImages,
         getCategoriesAndSubcategories
     }
 }

@@ -13,10 +13,10 @@
           </button>
           
           <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+            <!-- <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
               <span class="text-white font-bold text-sm">L</span>
-            </div>
-            <h1 class="text-xl font-bold text-gray-900">Ludus Admin</h1>
+            </div> -->
+            <img src="/logo_ludus.jpg" alt="Ludus Logo" class="h-8 w-auto" />
           </div>
         </div>
 
@@ -184,15 +184,16 @@ import {
   ChevronDownIcon, Bars3Icon, TagIcon, GiftIcon, PhotoIcon, StarIcon,
   CreditCardIcon, MapPinIcon, HeartIcon, ChatBubbleLeftIcon
 } from '@heroicons/vue/24/outline'
+import { provide } from 'vue'
+import { useNotification } from '~/composables/useNotfication'
 import NotificationComponent from '~/components/ui/NotificationComponent.vue'
+
 
 
 const route = useRoute()
 const sidebarOpen = ref(false)
 const showProfileMenu = ref(false)
 const searchQuery = ref('')
-
-// ĐỌC USER TỪ localStorage (CHỈ TRÊN CLIENT)
 const userInitial = ref('U')
 
 const user = ref({ name: '', email: '' })
@@ -208,14 +209,13 @@ if (process.client) {
   }
 }
 
-// Logout
 const logout = () => {
   if (process.client) localStorage.removeItem('admin_user')
   useState('auth_user').value = null
   window.location.href = '/login'
 }
 
-// Navigation
+
 const mainNavigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon, badge: null },
   { name: 'Đơn hàng', href: '/orders', icon: ShoppingCartIcon, badge: '12' },
@@ -225,7 +225,7 @@ const mainNavigation = [
 const managementNavigation = [
   { name: 'Sản phẩm', href: '/product', icon: ShoppingBagIcon },
   { name: 'Danh mục', href: '/category', icon: TagIcon },
-  { name: 'Biến thể sản phẩm', href: '/product-variants', icon: DocumentTextIcon },
+{ name: 'Biến thể sản phẩm', href: '/product-variant', icon: DocumentTextIcon },
   { name: 'Hình ảnh SP', href: '/product-images', icon: PhotoIcon },
   { name: 'Đánh giá', href: '/reviews', icon: StarIcon },
 ]
@@ -236,7 +236,7 @@ const toolsNavigation = [
   { name: 'Phương thức TT', href: '/payment-methods', icon: CreditCardIcon },
   { name: 'Địa chỉ KH', href: '/addresses', icon: MapPinIcon },
   { name: 'Giỏ hàng', href: '/carts', icon: ShoppingCartIcon },
-  { name: 'Yêu thích', href: '/wishlists', icon: HeartIcon },
+  //{ name: 'Yêu thích', href: '/wishlist', icon: HeartIcon },
   { name: 'Tin nhắn', href: '/messages', icon: ChatBubbleLeftIcon },
   { name: 'Báo cáo', href: '/reports', icon: ChartBarIcon },
   { name: 'Cài đặt', href: '/settings', icon: CogIcon },
@@ -248,7 +248,7 @@ const toggleSidebar = () => {
 
 const isActive = (href) => {
   if (href === '/') return route.path === '/'
-  return route.path.startsWith(href)
+  return route.path === href || route.path.startsWith(href + '/')
 }
 
 watch(() => route.path, () => {
@@ -264,10 +264,12 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 })
+const notification = useNotification()
+provide('notification', notification)
 </script>
 
 <style scoped>
-/* Custom scrollbar for sidebar */
+
 nav::-webkit-scrollbar {
   width: 4px;
 }

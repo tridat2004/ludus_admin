@@ -13,5 +13,5 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
   })
 
-  nuxtApp.provide('api', api)
+  nuxtApp.provide('api', api) 
 })
