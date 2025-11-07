@@ -4,11 +4,12 @@
       <div 
         v-if="isVisible" 
         :class="[
-          'fixed top-4 right-4 z-50 max-w-sm w-full',
-          'bg-white rounded-lg shadow-lg border-l-4 p-4',
+          'fixed top-4 right-4 z-[9999] max-w-sm w-full',
+          'bg-white rounded-lg shadow-xl border-l-4 p-4',
           'flex items-start space-x-3',
           notificationClasses
         ]"
+        role="alert"
       >
         <!-- Icon -->
         <div class="flex-shrink-0">
@@ -25,8 +26,8 @@
 
         <!-- Close button -->
         <button 
-          @click="isVisible = false"
-          class="flex-shrink-0 text-gray-400 hover:text-gray-600"
+          @click="hide"
+          class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
         >
           <XMarkIcon class="h-5 w-5" />
         </button>
@@ -36,7 +37,7 @@
 </template>
 
 <script setup>
-import { inject, computed } from 'vue'
+import { computed } from 'vue'
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -45,8 +46,8 @@ import {
   XMarkIcon
 } from '@heroicons/vue/24/outline'
 
-// ✅ Nuxt auto-import composables - không cần import
-const { message, type, isVisible } = inject('notification')
+// Sử dụng composable trực tiếp
+const { message, type, isVisible, hide } = useNotification()
 
 const notificationClasses = computed(() => {
   const classes = {
@@ -62,16 +63,16 @@ const notificationClasses = computed(() => {
 <style scoped>
 .notification-enter-active,
 .notification-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .notification-enter-from {
   opacity: 0;
-  transform: translateX(100%);
+  transform: translateX(100%) scale(0.95);
 }
 
 .notification-leave-to {
   opacity: 0;
-  transform: translateX(100%);
+  transform: translateX(100%) scale(0.95);
 }
 </style>

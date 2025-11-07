@@ -5,14 +5,20 @@
         <h1 class="text-2xl font-bold text-gray-900">Phương thức thanh toán</h1>
         <p class="text-gray-600">Quản lý các phương thức thanh toán</p>
       </div>
-      <button @click="showAddModal = true" class="btn btn-primary">
-        <PlusIcon class="h-5 w-5 mr-2" />
-        Thêm phương thức
-      </button>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="method in paymentMethods" :key="method.id" class="card hover-lift">
+    <!-- Loading -->
+    <div v-if="loading" class="flex justify-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+    </div>
+
+    <!-- Payment Methods Grid -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div 
+        v-for="method in paymentMethods" 
+        :key="method.id || method._id" 
+        class="card hover-lift"
+      >
         <div class="card-body">
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center">
@@ -21,162 +27,178 @@
               </div>
               <div>
                 <h3 class="font-semibold text-gray-900">{{ method.name }}</h3>
-                <p class="text-sm text-gray-500">{{ method.type }}</p>
+                <p class="text-sm text-gray-500">{{ formatType(method.type) }}</p>
               </div>
             </div>
+            
+            <!-- Toggle Switch -->
             <label class="relative inline-flex items-center cursor-pointer">
-              <input v-model="method.enabled" type="checkbox" class="sr-only peer">
-              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+              <input 
+                type="checkbox" 
+                :checked="method.isActive"
+                @change="toggleStatus(method)"
+                class="sr-only peer"
+                :disabled="toggling === (method.id || method._id)"
+              >
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"></div>
             </label>
           </div>
-          <p class="text-sm text-gray-600 mb-4">{{ method.description }}</p>
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-gray-500">Phí: {{ method.fee }}%</span>
-            <div class="flex space-x-2">
-              <button @click="editMethod(method)" class="text-primary-600 hover:text-primary-900">
-                <PencilIcon class="h-4 w-4" />
-              </button>
-              <button @click="deleteMethod(method.id)" class="text-red-600 hover:text-red-900">
-                <TrashIcon class="h-4 w-4" />
-              </button>
-            </div>
+          
+          <p class="text-sm text-gray-600 mb-4">
+            {{ method.description || 'Không có mô tả' }}
+          </p>
+          
+          <div class="flex items-center justify-between">
+            <span 
+              :class="[
+                'px-2 py-1 text-xs font-medium rounded-full',
+                method.isActive 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-gray-100 text-gray-800'
+              ]"
+            >
+              {{ method.isActive ? 'Đang hoạt động' : 'Tạm dừng' }}
+            </span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Modal -->
-    <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-lg w-full max-w-md">
-        <div class="flex items-center justify-between p-6 border-b">
-          <h3 class="text-lg font-semibold">{{ editingMethod ? 'Sửa phương thức' : 'Thêm phương thức' }}</h3>
-          <button @click="closeModal"><XMarkIcon class="h-6 w-6" /></button>
-        </div>
-        <form @submit.prevent="saveMethod" class="p-6 space-y-4">
-          <div>
-            <label class="form-label required">Tên phương thức</label>
-            <input v-model="formData.name" type="text" class="form-input" required>
-          </div>
-          <div>
-            <label class="form-label required">Loại</label>
-            <select v-model="formData.type" class="form-select" required>
-              <option value="COD">COD</option>
-              <option value="Bank Transfer">Chuyển khoản</option>
-              <option value="Credit Card">Thẻ tín dụng</option>
-              <option value="E-Wallet">Ví điện tử</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Mô tả</label>
-            <textarea v-model="formData.description" rows="3" class="form-textarea"></textarea>
-          </div>
-          <div>
-            <label class="form-label">Phí (%)</label>
-            <input v-model.number="formData.fee" type="number" step="0.01" class="form-input">
-          </div>
-          <div class="flex items-center">
-            <input id="enabled" v-model="formData.enabled" type="checkbox" class="mr-2">
-            <label for="enabled" class="text-sm">Kích hoạt ngay</label>
-          </div>
-          <div class="flex justify-end space-x-3 pt-4">
-            <button type="button" @click="closeModal" class="btn btn-secondary">Hủy</button>
-            <button type="submit" class="btn btn-primary">{{ editingMethod ? 'Cập nhật' : 'Thêm' }}</button>
-          </div>
-        </form>
-      </div>
+    <!-- Empty State -->
+    <div v-if="!loading && paymentMethods.length === 0" class="text-center py-12">
+      <CreditCardIcon class="mx-auto h-12 w-12 text-gray-400" />
+      <h3 class="mt-2 text-sm font-medium text-gray-900">Chưa có phương thức thanh toán</h3>
+      <p class="mt-1 text-sm text-gray-500">Hệ thống chưa có phương thức thanh toán nào</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon, CreditCardIcon, BanknotesIcon, PhoneIcon } from '@heroicons/vue/24/outline'
+import { 
+  CreditCardIcon, 
+  BanknotesIcon, 
+  PhoneIcon,
+  BuildingLibraryIcon,
+  WalletIcon
+} from '@heroicons/vue/24/outline'
 
-definePageMeta({ layout: 'default' })
-
-const showAddModal = ref(false)
-const editingMethod = ref(null)
-
-const formData = ref({
-  name: '',
-  type: 'COD',
-  description: '',
-  fee: 0,
-  enabled: true
+definePageMeta({ 
+  layout: 'default' 
 })
 
-const paymentMethods = ref([
-  {
-    id: 1,
-    name: 'COD',
-    type: 'COD',
-    description: 'Thanh toán khi nhận hàng',
-    fee: 0,
-    enabled: true
-  },
-  {
-    id: 2,
-    name: 'Chuyển khoản ngân hàng',
-    type: 'Bank Transfer',
-    description: 'Chuyển khoản qua ngân hàng',
-    fee: 0,
-    enabled: true
-  },
-  {
-    id: 3,
-    name: 'Thẻ tín dụng',
-    type: 'Credit Card',
-    description: 'Thanh toán bằng thẻ tín dụng',
-    fee: 2.5,
-    enabled: true
-  },
-  {
-    id: 4,
-    name: 'Ví MoMo',
-    type: 'E-Wallet',
-    description: 'Thanh toán qua ví MoMo',
-    fee: 1.5,
-    enabled: false
-  }
-])
+const { notify } = useNotification()
+const success = (msg) => notify(msg, 'success', 3000)
+const error = (msg) => notify(msg, 'error', 4000)
 
+const { 
+  getAllPaymentMethods, 
+  togglePaymentMethodStatus 
+} = usePaymentMethod()
+
+// State
+const paymentMethods = ref([])
+const loading = ref(false)
+const toggling = ref(null)
+
+// Get icon based on payment type
 const getIcon = (type) => {
-  return {
+  const icons = {
     'COD': BanknotesIcon,
-    'Bank Transfer': BanknotesIcon,
-    'Credit Card': CreditCardIcon,
-    'E-Wallet': PhoneIcon
-  }[type] || CreditCardIcon
+    'VNPAY': WalletIcon,
+    'MOMO': PhoneIcon,
+    'ZALOPAY': PhoneIcon,
+    'BANK_TRANSFER': BuildingLibraryIcon
+  }
+  return icons[type] || CreditCardIcon
 }
 
-const editMethod = (method) => {
-  editingMethod.value = method
-  formData.value = { ...method }
-  showAddModal.value = true
+// Format payment type
+const formatType = (type) => {
+  const types = {
+    'COD': 'Thanh toán khi nhận hàng',
+    'VNPAY': 'VNPay',
+    'MOMO': 'Ví MoMo',
+    'ZALOPAY': 'ZaloPay',
+    'BANK_TRANSFER': 'Chuyển khoản ngân hàng'
+  }
+  return types[type] || type
 }
 
-const deleteMethod = (id) => {
-  if (confirm('Bạn có chắc muốn xóa?')) {
-    paymentMethods.value = paymentMethods.value.filter(m => m.id !== id)
+// Fetch all payment methods
+const fetchPaymentMethods = async () => {
+  loading.value = true
+  try {
+    const response = await getAllPaymentMethods()
+    console.log('📦 Payment methods response:', response)
+    
+    // Handle different response structures
+    paymentMethods.value = response.data || response || []
+    
+    console.log('✅ Loaded payment methods:', paymentMethods.value)
+  } catch (err) {
+    console.error('❌ Error fetching payment methods:', err)
+    error('Không thể tải danh sách phương thức thanh toán!')
+    paymentMethods.value = []
+  } finally {
+    loading.value = false
   }
 }
 
-const saveMethod = () => {
-  if (editingMethod.value) {
-    const index = paymentMethods.value.findIndex(m => m.id === editingMethod.value.id)
-    paymentMethods.value[index] = { ...formData.value }
-  } else {
-    paymentMethods.value.push({ id: Date.now(), ...formData.value })
+// Toggle payment method status
+const toggleStatus = async (method) => {
+  const methodId = method.id || method._id
+  
+  if (!methodId) {
+    error('Không tìm thấy ID phương thức thanh toán!')
+    return
   }
-  closeModal()
+
+  toggling.value = methodId
+  
+  try {
+    console.log('🔄 Toggling status for:', methodId)
+    await togglePaymentMethodStatus(methodId)
+    
+    // Update local state
+    const index = paymentMethods.value.findIndex(
+      m => (m.id || m._id) === methodId
+    )
+    
+    if (index !== -1) {
+      paymentMethods.value[index].isActive = !paymentMethods.value[index].isActive
+      
+      const newStatus = paymentMethods.value[index].isActive ? 'kích hoạt' : 'tạm dừng'
+      success(`Đã ${newStatus} phương thức thanh toán!`)
+    }
+  } catch (err) {
+    console.error('❌ Error toggling status:', err)
+    error('Không thể thay đổi trạng thái!')
+  } finally {
+    toggling.value = null
+  }
 }
 
-const closeModal = () => {
-  showAddModal.value = false
-  editingMethod.value = null
-  formData.value = { name: '', type: 'COD', description: '', fee: 0, enabled: true }
-}
+// Load data on mount
+onMounted(() => {
+  fetchPaymentMethods()
+})
 </script>
 
 <style scoped>
-.required::after { content: " *"; color: #ef4444; }
+.hover-lift {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200;
+}
+
+.card-body {
+  @apply p-6;
+}
 </style>
