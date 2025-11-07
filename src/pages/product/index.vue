@@ -543,7 +543,7 @@ const { notify } = useNotification()
 const success = (msg) => notify(msg, 'success', 3000)
 const error = (msg) => notify(msg, 'error', 4000)
 
-const { getProducts, deleteProduct } = useProduct()
+const { getProducts, deleteProduct,deleteProductVariantByProduct } = useProduct()
 const { getCategories } = useCategory()
 const { getSubCategories } = useSubCategory()
 
@@ -827,23 +827,31 @@ const confirmDelete = (product) => {
 }
 
 const handleDelete = async () => {
-  const id = productToDelete.value?._id || productToDelete.value?.id
-  if (!id) return
+  const id = productToDelete.value?._id || productToDelete.value?.id;
+  if (!id) return;
 
-  deleting.value = true
+  deleting.value = true;
   try {
-    await deleteProduct(id)
-    showDeleteDialog.value = false
-    productToDelete.value = null
-    await nextTick()
-    await fetchProducts()
-    success('Xóa sản phẩm thành công!')
+    // Xoá biến thể trước
+    await deleteProductVariantByProduct(id);
+
+    // Xoá sản phẩm
+    await deleteProduct(id);
+
+    showDeleteDialog.value = false;
+    productToDelete.value = null;
+
+    await nextTick();
+    await fetchProducts();
+
+    success("Xóa sản phẩm thành công!");
   } catch (err) {
-    error(err.response?.data?.message || 'Lỗi khi xóa sản phẩm!')
+    error(err.response?.data?.message || "Lỗi khi xóa sản phẩm!");
   } finally {
-    deleting.value = false
+    deleting.value = false;
   }
 }
+
 
 // Bulk delete
 const confirmBulkDelete = () => {

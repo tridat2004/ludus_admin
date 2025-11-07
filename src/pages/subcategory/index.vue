@@ -176,6 +176,28 @@
         </button>
       </template>
     </Modal>
+    <Modal
+  v-model="showDeleteDialog"
+  title="Xác nhận xóa"
+  :loading="deleting"
+>
+  <div class="space-y-4">
+    <p class="text-gray-700">
+      Bạn có chắc chắn muốn xóa 
+      <strong>{{ subcategoryToDelete?.name }}</strong> không?
+    </p>
+    <p class="text-sm text-gray-500">
+      Hành động này không thể hoàn tác.
+    </p>
+  </div>
+
+  <template #footer>
+    <button @click="showDeleteDialog = false" class="btn btn-secondary">Hủy</button>
+    <button @click="handleDelete" :disabled="deleting" class="btn btn-danger">
+      {{ deleting ? 'Đang xóa...' : 'Xóa' }}
+    </button>
+  </template>
+</Modal>
   </div>
 </template>
 

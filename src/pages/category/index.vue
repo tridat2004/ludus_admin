@@ -177,7 +177,7 @@
 
       <template #footer>
         <button @click="showDeleteDialog = false" class="btn btn-secondary">Hủy</button>
-        <button @click="deleteCategory" :disabled="deleting" class="btn btn-danger">
+        <button @click="handleDelete" :disabled="deleting" class="btn btn-danger">
           <span v-if="deleting" class="flex items-center">
             <svg class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -260,7 +260,7 @@ const fetchCategories = async () => {
     console.log('✅ Loaded:', categories.value.length, 'categories')
     
   } catch (err) {
-    console.error('❌ Error:', err)
+    console.error('❌ Error:', error)
     error('Không thể tải danh mục!')
     categories.value = []
   } finally {
@@ -357,7 +357,7 @@ const handleDelete = async () => {
     
     success('Xóa thành công!')
   } catch (err) {
-    error(err.response?.data?.message || 'Lỗi xóa!')
+    error(error.response?.data?.message || 'Lỗi xóa!')
   } finally {
     deleting.value = false
   }
@@ -389,8 +389,8 @@ const saveCategory = async () => {
     currentPage.value = 1
     
     success(editMode.value ? 'Cập nhật thành công!' : 'Thêm thành công!')
-  } catch (err) {
-    error(err.response?.data?.message || 'Có lỗi xảy ra!')
+  } catch (err ) {
+    error(error.response?.data?.message || 'Có lỗi xảy ra!')
   } finally {
     saving.value = false
   }
