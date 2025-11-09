@@ -231,7 +231,7 @@ const managementNavigation = [
 ]
 
 const toolsNavigation = [
-  { name: 'Mã giảm giá', href: '/coupons', icon: GiftIcon },
+  { name: 'Mã giảm giá', href: '/voucher', icon: GiftIcon },
   { name: 'Thanh toán', href: '/payments', icon: CreditCardIcon },
   { name: 'Phương thức TT', href: '/payment-methods', icon: CreditCardIcon },
   { name: 'Địa chỉ KH', href: '/addresses', icon: MapPinIcon },

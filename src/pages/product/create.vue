@@ -708,16 +708,22 @@ const saveProduct = async () => {
   try {
     // Step 1: Create product with main image
     const payload = {
-      name: formData.value.name.trim(),
-      description: formData.value.description?.trim() || '',
-      price: formData.value.price,
-      stockQuantity: formData.value.stockQuantity,
-      productCode: formData.value.productCode.trim(),
-      isActive: formData.value.isActive,
-      sizes: formData.value.sizes,
-      colors: formData.value.colors,
-      file: mainFile.value // Main image
-    }
+  name: formData.value.name.trim(),
+  description: formData.value.description?.trim() || '',
+  price: formData.value.price,
+  stockQuantity: formData.value.stockQuantity,
+  productCode: formData.value.productCode.trim(),
+  isActive: formData.value.isActive,
+  sizes: formData.value.sizes
+    ? formData.value.sizes[0].split(',').map(s => s.trim()).filter(Boolean)
+    : [],
+  colors: formData.value.colors
+    ? formData.value.colors[0].split(',').map(c => c.trim()).filter(Boolean)
+    : [],
+  file: mainFile.value // Main image
+}
+
+
 
     console.log('📤 Step 1: Creating product with main image...')
     const createdProduct = await createProduct(formData.value.subcategoryId, payload)
