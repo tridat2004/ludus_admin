@@ -117,8 +117,8 @@
           <p class="text-gray-600">Không tìm thấy đơn hàng nào</p>
         </div>
         <div v-else>
-          <!-- BỎ SCROLL NGANG -->
-          <div class="overflow-hidden">
+          <!-- Bỏ scroll ngang hoàn toàn -->
+          <div>
             <table class="w-full table-auto">
               <thead class="bg-gray-50">
                 <tr>
@@ -163,8 +163,8 @@
             <CheckCircleIcon class="h-5 w-5" />
           </button>
 
-          <!-- Dropdown - DỪNG overflow, dùng fixed positioning -->
-          <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 bg-white rounded-lg shadow-2xl border border-gray-200 opacity-0 invisible scale-95 transition-all duration-200 ease-out pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:scale-100 group-hover:pointer-events-auto z-50">
+          <!-- Dropdown - SỬA: dùng top thay vì bottom để hiện bên dưới -->
+          <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 bg-white rounded-lg shadow-2xl border border-gray-200 opacity-0 invisible scale-95 transition-all duration-200 ease-out pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:scale-100 group-hover:pointer-events-auto z-50">
             <div class="py-2">
               <button
                 v-for="nextStatus in getNextStatuses(order.status)"
@@ -388,7 +388,7 @@ const stats = ref({
 })
 
 const pagination = ref({
-  total: 0, totalPages: 0, limit: 6, offset: 0
+  total: 0, totalPages: 0, limit: 10, offset: 0
 })
 
 // Debounce

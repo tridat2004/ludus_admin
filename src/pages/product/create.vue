@@ -417,7 +417,7 @@ import {
   XMarkIcon,
   CheckIcon
 } from '@heroicons/vue/24/outline'
-
+import { validateProduct } from '~/utils/validate'
 definePageMeta({
   layout: 'default'
 })
@@ -431,6 +431,7 @@ const { getCategories } = useCategory()
 const { getSubCategories } = useSubCategory()
 
 // State
+const validationErrors = ref([])
 const saving = ref(false)
 const isDraggingMain = ref(false)
 const isDraggingAdditional = ref(false)
@@ -674,13 +675,13 @@ const saveProduct = async () => {
     return
   }
 
-  if (!formData.value.price || formData.value.price <= 0) {
-    showError('Giá sản phẩm phải lớn hơn 0!')
+  if (!formData.value.price || isNaN(formData.value.price) || formData.value.price <= 0) {
+    showError('Giá sản phẩm phải là số và lớn hơn 0!')
     return
   }
 
-  if (formData.value.stockQuantity === null || formData.value.stockQuantity < 0) {
-    showError('Số lượng tồn kho không hợp lệ!')
+  if (formData.value.stockQuantity === null || isNaN(formData.value.stockQuantity) || formData.value.stockQuantity < 0) {
+    showError('Số lượng tồn kho phải là số nguyên >= 0!')
     return
   }
 
@@ -694,6 +695,16 @@ const saveProduct = async () => {
     return
   }
 
+  if (!formData.value.sizes || !formData.value.sizes[0] || !formData.value.sizes[0].trim()) {
+    showError('Vui lòng nhập ít nhất 1 kích thước!')
+    return
+  }
+
+  if (!formData.value.colors || !formData.value.colors[0] || !formData.value.colors[0].trim()) {
+    showError('Vui lòng nhập ít nhất 1 màu sắc!')
+    return
+  }
+
   // Auto generate SKU if enabled
   if (autoGenerateSKU.value && !formData.value.productCode) {
     generateSKU()
@@ -704,47 +715,44 @@ const saveProduct = async () => {
     return
   }
 
+  if (!/^[A-Za-z0-9_-]+$/.test(formData.value.productCode)) {
+    showError('Mã sản phẩm chỉ được chứa chữ, số, gạch ngang hoặc gạch dưới!')
+    return
+  }
+
+  // Optional: check file type
+  const validImageTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (mainFile.value && !validImageTypes.includes(mainFile.value.type)) {
+    showError('Ảnh chính phải là file JPG, PNG hoặc WEBP!')
+    return
+  }
+
+  // Prepare data
+  formData.value.name = formData.value.name.trim()
+  formData.value.description = formData.value.description?.trim() || ''
+  formData.value.productCode = formData.value.productCode.trim()
+
+  const payload = {
+    name: formData.value.name,
+    description: formData.value.description,
+    price: formData.value.price,
+    stockQuantity: formData.value.stockQuantity,
+    productCode: formData.value.productCode,
+    isActive: formData.value.isActive,
+    sizes: formData.value.sizes[0]?.split(',').map(s => s.trim()).filter(Boolean) || [],
+    colors: formData.value.colors[0]?.split(',').map(c => c.trim()).filter(Boolean) || [],
+    file: mainFile.value
+  }
+
   saving.value = true
   try {
-    // Step 1: Create product with main image
-    const payload = {
-  name: formData.value.name.trim(),
-  description: formData.value.description?.trim() || '',
-  price: formData.value.price,
-  stockQuantity: formData.value.stockQuantity,
-  productCode: formData.value.productCode.trim(),
-  isActive: formData.value.isActive,
-  sizes: formData.value.sizes
-    ? formData.value.sizes[0].split(',').map(s => s.trim()).filter(Boolean)
-    : [],
-  colors: formData.value.colors
-    ? formData.value.colors[0].split(',').map(c => c.trim()).filter(Boolean)
-    : [],
-  file: mainFile.value // Main image
-}
-
-
-
-    console.log('📤 Step 1: Creating product with main image...')
     const createdProduct = await createProduct(formData.value.subcategoryId, payload)
     const productId = createdProduct._id || createdProduct.id || createdProduct.data?._id || createdProduct.data?.id
 
-    if (!productId) {
-      throw new Error('Không lấy được ID sản phẩm sau khi tạo!')
-    }
+    if (!productId) throw new Error('Không lấy được ID sản phẩm sau khi tạo!')
 
-    console.log('✅ Product created with ID:', productId)
-
-    // Step 2: Upload additional images if any
     if (additionalFiles.value.length > 0) {
-      console.log(`📤 Step 2: Uploading ${additionalFiles.value.length} additional images...`)
-      try {
-        await uploadProductImages(productId, additionalFiles.value)
-        console.log('✅ Additional images uploaded successfully')
-      } catch (imgError) {
-        console.error('⚠️ Warning: Failed to upload additional images:', imgError)
-        showError('Tạo sản phẩm thành công nhưng một số ảnh bổ sung tải lên thất bại!')
-      }
+      await uploadProductImages(productId, additionalFiles.value)
     }
 
     showSuccess('Tạo sản phẩm thành công!')

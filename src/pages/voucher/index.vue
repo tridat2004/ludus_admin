@@ -88,8 +88,7 @@
                 <th>Loại khuyến mãi</th>
                 <th>Loại giảm</th>
                 <th>Giảm giá</th>
-                <th>Đơn tối thiểu</th>
-                <th>Sử dụng</th>
+                <th>Giới hạn sử dụng</th>
                 <th>Thời gian</th>
                 <th>Trạng thái</th>
                 <th>Thao tác</th>
@@ -97,7 +96,7 @@
             </thead>
             <tbody>
               <tr v-if="!filteredCoupons || filteredCoupons.length === 0">
-                <td colspan="9" class="text-center py-8 text-gray-500">
+                <td colspan="8" class="text-center py-8 text-gray-500">
                   Không có mã giảm giá nào
                 </td>
               </tr>
@@ -120,16 +119,10 @@
                 <td class="font-semibold text-green-600">
                   {{ coupon.type === 'percentage' ? `${coupon.value}%` : formatCurrency(coupon.value) }}
                 </td>
-                <td>{{ formatCurrency(coupon.minOrderValue || 0) }}</td>
                 <td>
                   <div class="text-sm">
-                    <p>{{ coupon.usedCount || 0 }} / {{ coupon.maxUses || '∞' }}</p>
-                    <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                      <div 
-                        class="bg-primary-600 h-1.5 rounded-full" 
-                        :style="`width: ${coupon.maxUses ? ((coupon.usedCount || 0) / coupon.maxUses * 100) : 0}%`"
-                      ></div>
-                    </div>
+                    <p class="font-medium text-gray-700">Tối đa: {{ coupon.maxUses }} lần</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Mỗi người dùng: 1 lần</p>
                   </div>
                 </td>
                 <td>
@@ -283,6 +276,7 @@
               required
               min="1"
             >
+            <p class="text-xs text-gray-500 mt-1">Tổng số lần mã này có thể được sử dụng (mỗi người 1 lần)</p>
           </div>
           
           <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
@@ -364,7 +358,7 @@ const formData = ref({
 })
 
 const coupons = ref([])
-const allCoupons = ref([]) // Lưu toàn bộ voucher để tính stats
+const allCoupons = ref([])
 const pagination = ref({
   page: 1,
   limit: 5,
@@ -372,7 +366,7 @@ const pagination = ref({
   totalPages: 0
 })
 
-// Computed Stats - Dựa trên toàn bộ dữ liệu, không phụ thuộc phân trang
+// Computed Stats
 const computedStats = computed(() => {
   if (!Array.isArray(allCoupons.value)) {
     return [
@@ -398,7 +392,6 @@ const computedStats = computed(() => {
     { name: 'Đã hết hạn', value: expired, icon: XCircleIcon, bgColor: 'bg-red-100', iconColor: 'text-red-600' }
   ]
 })
-
 
 // Computed
 const filteredCoupons = computed(() => {
@@ -433,7 +426,6 @@ const filteredCoupons = computed(() => {
 
 // Methods
 const mapDiscountType = (type) => {
-  // Map BE enum to FE display
   const typeMap = {
     'PERCENTAGE': 'percentage',
     'FIXED_AMOUNT': 'fixed',
@@ -511,7 +503,6 @@ const loadVouchers = async (page = 1) => {
       type: mapDiscountType(v.discountType),
       value: v.discountValue || 0,
       maxUses: v.maxUsage || 0,
-      usedCount: v.usageCount || 0,
       startDate: v.startDate,
       expiresAt: v.endDate,
       status: v.isActive ? 'active' : 'disabled',
@@ -530,7 +521,6 @@ const loadVouchers = async (page = 1) => {
         type: mapDiscountType(v.discountType),
         value: v.discountValue || 0,
         maxUses: v.maxUsage || 0,
-        usedCount: v.usageCount || 0,
         startDate: v.startDate,
         expiresAt: v.endDate,
         status: v.isActive ? 'active' : 'disabled',
@@ -552,7 +542,6 @@ const loadVouchers = async (page = 1) => {
   }
 }
 
-
 const changePage = (page) => {
   if (page >= 1 && page <= pagination.value.totalPages) {
     pagination.value.page = page
@@ -564,7 +553,6 @@ const saveCoupon = async () => {
   saving.value = true
   
   try {
-    // Validate promotionalType
     if (!formData.value.promotionalType) {
       showError('Vui lòng chọn loại khuyến mãi')
       saving.value = false
@@ -572,15 +560,13 @@ const saveCoupon = async () => {
     }
 
     const data = {
-      promotionalType: formData.value.promotionalType, // Đã là uppercase từ select
+      promotionalType: formData.value.promotionalType,
       discountType: formData.value.discountType,
       discountValue: formData.value.discountValue,
       startDate: new Date(formData.value.startDate).toISOString(),
       endDate: new Date(formData.value.endDate).toISOString(),
       maxUsage: formData.value.maxUsage
     }
-    
-    console.log('Sending data:', data)
     
     await createVoucher(data)
     showSuccess('Tạo mã thành công!')
@@ -605,19 +591,15 @@ const deleteCoupon = async () => {
   
   try {
     const id = couponToDelete.value.id || couponToDelete.value._id
-    console.log('Deleting voucher with id:', id)
     
     await deleteVoucher(id)
     
-    // Xóa trực tiếp khỏi cả 2 danh sách
     coupons.value = coupons.value.filter(c => c.id !== id)
     allCoupons.value = allCoupons.value.filter(c => c.id !== id)
     
-    // Cập nhật lại pagination
     pagination.value.total = Math.max(0, pagination.value.total - 1)
     pagination.value.totalPages = Math.ceil(pagination.value.total / pagination.value.limit)
     
-    // Nếu trang hiện tại không còn item nào và không phải trang 1, quay về trang trước
     if (coupons.value.length === 0 && pagination.value.page > 1) {
       await loadVouchers(pagination.value.page - 1)
     }

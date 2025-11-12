@@ -600,8 +600,11 @@ const cancelHideSubCategory = () => {
 }
 
 // Fetch data
+// --- Thay thế hàm fetchProducts hiện tại bằng đoạn này ---
 const fetchProducts = async () => {
   loading.value = true
+  // reset imageErrors ngay trước khi fetch để tránh trạng thái cũ ảnh hưởng
+  imageErrors.value = {}
   try {
     const params = {
       page: currentPage.value,
@@ -614,7 +617,39 @@ const fetchProducts = async () => {
     const response = await getProducts(params)
     const apiData = response.data || response
 
-    products.value = apiData.data || []
+    // Chuẩn hoá dữ liệu: đảm bảo _id là string, và đảm bảo ảnh có full URL nếu backend trả relative path
+    products.value = (apiData.data || []).map(p => {
+      // convert _id (có thể là ObjectId object) sang chuỗi
+      const normalizedId = p._id && typeof p._id === 'object' ? String(p._id) : p._id || p.id || ''
+
+      // chuẩn hoá imageUrl chính
+      let imageUrl = p.imageUrl || ''
+      if (imageUrl && !imageUrl.startsWith('http')) {
+        // đổi 'https://your-cdn.com' thành domain thực tế của bạn nếu cần
+        imageUrl = `${import.meta.env.VITE_CDN_BASE || 'https://res.cloudinary.com'}/${imageUrl.replace(/^\/+/, '')}`
+      }
+
+      // chuẩn hoá productImages array (nếu có)
+      const productImages = (p.productImages || []).map(imgObj => {
+        let imgUrl = imgObj.imageUrl || imgObj.url || ''
+        if (imgUrl && !imgUrl.startsWith('http')) {
+          imgUrl = `${import.meta.env.VITE_CDN_BASE || 'https://res.cloudinary.com'}/${imgUrl.replace(/^\/+/, '')}`
+        }
+        return {
+          ...imgObj,
+          imageUrl: imgUrl
+        }
+      })
+
+      return {
+        ...p,
+        _id: normalizedId,
+        id: normalizedId,
+        imageUrl,
+        productImages
+      }
+    })
+
     totalProducts.value = apiData.pagination?.total || 0
   } catch (err) {
     console.error('❌ Error fetching products:', err)
@@ -625,6 +660,7 @@ const fetchProducts = async () => {
     loading.value = false
   }
 }
+
 
 const fetchCategories = async () => {
   try {

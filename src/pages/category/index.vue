@@ -136,17 +136,22 @@
     >
       <form @submit.prevent="saveCategory" class="space-y-4">
         <div>
-          <label class="form-label required">Tên danh mục</label>
-          <input v-model="formData.name" type="text" class="form-input" required placeholder="Nhập tên danh mục" />
-        </div>
-        <div>
-          <label class="form-label">Mô tả</label>
-          <textarea v-model="formData.description" rows="3" class="form-textarea" placeholder="Mô tả về danh mục"></textarea>
-        </div>
-        <div class="flex items-center">
-          <input id="isActive" v-model="formData.isActive" type="checkbox" class="h-4 w-4 text-primary-600 rounded" />
-          <label for="isActive" class="ml-2 text-sm text-gray-700">Kích hoạt danh mục</label>
-        </div>
+  <label class="form-label required">Tên danh mục</label>
+  <input v-model="formData.name" type="text" class="form-input" placeholder="Nhập tên danh mục" />
+  <p v-if="formErrors.name" class="text-red-500 text-sm mt-1">{{ formErrors.name }}</p>
+</div>
+
+<div>
+  <label class="form-label">Mô tả</label>
+  <textarea v-model="formData.description" rows="3" class="form-textarea" placeholder="Mô tả về danh mục"></textarea>
+  <p v-if="formErrors.description" class="text-red-500 text-sm mt-1">{{ formErrors.description }}</p>
+</div>
+
+<div class="flex items-center">
+  <input id="isActive" v-model="formData.isActive" type="checkbox" class="h-4 w-4 text-primary-600 rounded" />
+  <label for="isActive" class="ml-2 text-sm text-gray-700">Kích hoạt danh mục</label>
+</div>
+
       </form>
 
       <template #footer>
@@ -228,6 +233,10 @@ const formData = ref({
   name: '',
   description: '',
   isActive: true
+})
+const formErrors = ref({
+  name: '',
+  description: ''
 })
 
 // Fetch categories
@@ -346,28 +355,44 @@ const handleDelete = async () => {
   try {
     await deleteCategory(id)
     
+    categories.value = categories.value.filter(c => c.id !== id)
+    success('Ẩn danh mục thành công!')
+
+  } catch (err) {
+    const errorMessage = err.response?.data?.message || 'Không thể ẩn danh mục!'
+    error(errorMessage)
+  } finally {
     showDeleteDialog.value = false
     categoryToDelete.value = null
-    await nextTick()
-    await fetchCategories()
-
-    if (paginatedCategories.value.length === 0 && currentPage.value > 1) {
-      currentPage.value--
-    }
-    
-    success('Xóa thành công!')
-  } catch (err) {
-    error(error.response?.data?.message || 'Lỗi xóa!')
-  } finally {
     deleting.value = false
   }
 }
 
-const saveCategory = async () => {
+const validateForm = () => {
+  let isValid = true
+  formErrors.value.name = ''
+  formErrors.value.description = ''
+
+  // Tên danh mục bắt buộc
   if (!formData.value.name.trim()) {
-    error('Vui lòng nhập tên danh mục!')
-    return
+    formErrors.value.name = 'Vui lòng nhập tên danh mục!'
+    isValid = false
+  } else if (formData.value.name.trim().length < 2) {
+    formErrors.value.name = 'Tên danh mục phải ít nhất 2 ký tự!'
+    isValid = false
   }
+
+  // Mô tả (tùy chọn, nhưng nếu nhập phải >= 10 ký tự)
+  if (formData.value.description && formData.value.description.trim().length < 10) {
+    formErrors.value.description = 'Mô tả phải ít nhất 10 ký tự!'
+    isValid = false
+  }
+
+  return isValid
+}
+
+const saveCategory = async () => {
+  if (!validateForm()) return
 
   saving.value = true
   try {
@@ -387,14 +412,15 @@ const saveCategory = async () => {
     await nextTick()
     await fetchCategories()
     currentPage.value = 1
-    
+
     success(editMode.value ? 'Cập nhật thành công!' : 'Thêm thành công!')
-  } catch (err ) {
-    error(error.response?.data?.message || 'Có lỗi xảy ra!')
+  } catch (err) {
+    error(err.response?.data?.message || 'Có lỗi xảy ra!')
   } finally {
     saving.value = false
   }
 }
+
 
 const closeModal = () => {
   showAddModal.value = false

@@ -1,4 +1,4 @@
-<!-- pages/category/subcategory.vue - FIXED PAGINATION -->
+<!-- pages/category/subcategory.vue - FIXED DELETE -->
 <template>
   <div class="space-y-6">
     <!-- Breadcrumb -->
@@ -147,13 +147,17 @@
     >
       <form @submit.prevent="saveSubCategory" class="space-y-4">
         <div>
-          <label class="form-label required">Tên danh mục con</label>
-          <input v-model="formData.name" type="text" class="form-input" required />
-        </div>
-        <div>
-          <label class="form-label">Mô tả</label>
-          <textarea v-model="formData.description" rows="3" class="form-textarea"></textarea>
-        </div>
+  <label class="form-label required">Tên danh mục con</label>
+  <input v-model="formData.name" type="text" class="form-input" />
+  <p v-if="formErrors.name" class="text-red-500 text-sm mt-1">{{ formErrors.name }}</p>
+</div>
+
+<div>
+  <label class="form-label">Mô tả</label>
+  <textarea v-model="formData.description" rows="3" class="form-textarea"></textarea>
+  <p v-if="formErrors.description" class="text-red-500 text-sm mt-1">{{ formErrors.description }}</p>
+</div>
+
         <div>
           <label class="form-label required">Danh mục cha</label>
           <input 
@@ -176,28 +180,35 @@
         </button>
       </template>
     </Modal>
-    <Modal
-  v-model="showDeleteDialog"
-  title="Xác nhận xóa"
-  :loading="deleting"
->
-  <div class="space-y-4">
-    <p class="text-gray-700">
-      Bạn có chắc chắn muốn xóa 
-      <strong>{{ subcategoryToDelete?.name }}</strong> không?
-    </p>
-    <p class="text-sm text-gray-500">
-      Hành động này không thể hoàn tác.
-    </p>
-  </div>
 
-  <template #footer>
-    <button @click="showDeleteDialog = false" class="btn btn-secondary">Hủy</button>
-    <button @click="handleDelete" :disabled="deleting" class="btn btn-danger">
-      {{ deleting ? 'Đang xóa...' : 'Xóa' }}
-    </button>
-  </template>
-</Modal>
+    <!-- Delete Modal - IMPROVED ERROR HANDLING -->
+    <Modal
+      v-model="showDeleteDialog"
+      title="Xác nhận xóa"
+      :loading="deleting"
+    >
+      <div class="space-y-4">
+        <p class="text-gray-700">
+          Bạn có chắc chắn muốn xóa 
+          <strong>{{ subcategoryToDelete?.name }}</strong> không?
+        </p>
+        <p class="text-sm text-gray-500">
+          Hành động này không thể hoàn tác.
+        </p>
+        
+        <!-- Hiển thị lỗi nếu có -->
+        <div v-if="deleteError" class="bg-red-50 border border-red-200 rounded-lg p-3">
+          <p class="text-sm text-red-600">{{ deleteError }}</p>
+        </div>
+      </div>
+
+      <template #footer>
+        <button @click="showDeleteDialog = false" class="btn btn-secondary">Hủy</button>
+        <button @click="handleDelete" :disabled="deleting" class="btn btn-danger">
+          {{ deleting ? 'Đang xóa...' : 'Xóa' }}
+        </button>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -214,6 +225,30 @@ const { success, error } = useNotification()
 // Composables
 const { getCategories } = useCategory()
 const { getSubCategories, createSubCategory, updateSubCategory, deleteSubCategory } = useSubCategory()
+const formErrors = ref({
+  name: '',
+  description: ''
+})
+const validateSubCategoryForm = () => {
+  let isValid = true
+  formErrors.value.name = ''
+  formErrors.value.description = ''
+
+  if (!formData.value.name.trim()) {
+    formErrors.value.name = 'Vui lòng nhập tên danh mục con!'
+    isValid = false
+  } else if (formData.value.name.trim().length < 2) {
+    formErrors.value.name = 'Tên danh mục con phải ít nhất 2 ký tự!'
+    isValid = false
+  }
+
+  if (formData.value.description && formData.value.description.trim().length < 10) {
+    formErrors.value.description = 'Mô tả phải ít nhất 10 ký tự!'
+    isValid = false
+  }
+
+  return isValid
+}
 
 // State
 const categoryId = ref(route.query.categoryId)
@@ -227,6 +262,7 @@ const showAddModal = ref(false)
 const showDeleteDialog = ref(false)
 const editMode = ref(false)
 const subcategoryToDelete = ref(null)
+const deleteError = ref('') // THÊM: State để hiển thị lỗi
 const currentPage = ref(1)
 const itemsPerPage = 6
 
@@ -267,7 +303,7 @@ const fetchSubCategories = async () => {
     // Filter by categoryId
     subcategories.value = data.filter(sub => {
       return (
-        sub.categoryId === categoryId.value ||
+        sub.categoryId === categoryId.value && sub.isActive||
         sub.category === categoryId.value ||
         sub.category?._id === categoryId.value ||
         sub.category?.id === categoryId.value ||
@@ -287,14 +323,19 @@ const fetchSubCategories = async () => {
   }
 }
 
-// Computed - FIXED: Thêm các computed còn thiếu
+// Computed
 const filteredSubCategories = computed(() => {
-  if (!searchQuery.value.trim()) return subcategories.value
-  const q = searchQuery.value.toLowerCase()
-  return subcategories.value.filter(s =>
-    s.name?.toLowerCase().includes(q) ||
-    s.description?.toLowerCase().includes(q)
-  )
+  let list = subcategories.value.filter(s => s.isActive) // 🔥 chỉ lấy đang hoạt động
+
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase()
+    list = list.filter(s =>
+      s.name?.toLowerCase().includes(q) ||
+      s.description?.toLowerCase().includes(q)
+    )
+  }
+
+  return list
 })
 
 const totalPages = computed(() => Math.ceil(filteredSubCategories.value.length / itemsPerPage))
@@ -304,7 +345,6 @@ const paginatedSubCategories = computed(() => {
   return filteredSubCategories.value.slice(start, start + itemsPerPage)
 })
 
-// FIXED: Thêm computed cho pagination info
 const startItem = computed(() => {
   if (filteredSubCategories.value.length === 0) return 0
   return (currentPage.value - 1) * itemsPerPage + 1
@@ -321,19 +361,16 @@ const displayPages = computed(() => {
   const current = currentPage.value
   
   if (total <= 7) {
-    // Hiển thị tất cả nếu <= 7 trang
     for (let i = 1; i <= total; i++) {
       pages.push(i)
     }
   } else {
-    // Luôn hiển thị trang đầu
     pages.push(1)
     
     if (current > 3) {
       pages.push('...')
     }
     
-    // Hiển thị các trang xung quanh trang hiện tại
     const start = Math.max(2, current - 1)
     const end = Math.min(total - 1, current + 1)
     
@@ -345,7 +382,6 @@ const displayPages = computed(() => {
       pages.push('...')
     }
     
-    // Luôn hiển thị trang cuối
     pages.push(total)
   }
   
@@ -384,33 +420,53 @@ const editSubCategory = (subcategory) => {
 
 const confirmDelete = (subcategory) => {
   subcategoryToDelete.value = subcategory
+  deleteError.value = '' // Reset lỗi cũ
   showDeleteDialog.value = true
 }
 
+// IMPROVED: Xử lý xóa với error handling tốt hơn
 const handleDelete = async () => {
-  const id = subcategoryToDelete.value?.id
-  if (!id) return
+  const subcat = subcategoryToDelete.value
+  if (!subcat?.id && !subcat?._id) {
+    deleteError.value = 'Không tìm thấy ID danh mục con'
+    return
+  }
+
+  const deleteId = subcat.id || subcat._id
 
   deleting.value = true
+  deleteError.value = ''
+
   try {
-    await deleteSubCategory(id)
+    await deleteSubCategory(deleteId)
+
+    // Ẩn danh mục đã xoá khỏi danh sách mà không cần fetch lại
+    subcategories.value = subcategories.value.filter(s => s.id !== deleteId && s._id !== deleteId)
+
+    // Đóng modal và reset
     showDeleteDialog.value = false
     subcategoryToDelete.value = null
-    await nextTick()
-    await fetchSubCategories()
-    success('Xóa thành công!')
+
+    success('Xoá danh mục con thành công!')
   } catch (err) {
-    error(err.response?.data?.message || 'Lỗi xóa!')
+    console.error('Delete error:', err)
+
+    const errorMessage =
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      err.message ||
+      'Có lỗi xảy ra khi xoá danh mục con'
+
+    deleteError.value = errorMessage
+    error(errorMessage)
   } finally {
     deleting.value = false
   }
 }
 
+
 const saveSubCategory = async () => {
-  if (!formData.value.name.trim()) {
-    error('Vui lòng nhập tên danh mục con!')
-    return
-  }
+  if (!validateSubCategoryForm()) return
 
   saving.value = true
   try {
@@ -431,11 +487,13 @@ const saveSubCategory = async () => {
     await fetchSubCategories()
     success(editMode.value ? 'Cập nhật thành công!' : 'Thêm thành công!')
   } catch (err) {
-    error(err.response?.data?.message || 'Có lỗi xảy ra!')
+    const message = err.response?.data?.message || 'Có lỗi xảy ra!'
+    error(message)
   } finally {
     saving.value = false
   }
 }
+
 
 const closeModal = () => {
   showAddModal.value = false
