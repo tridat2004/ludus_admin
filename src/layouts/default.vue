@@ -13,9 +13,6 @@
           </button>
           
           <div class="flex items-center space-x-3">
-            <!-- <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span class="text-white font-bold text-sm">L</span>
-            </div> -->
             <img src="/logo_ludus.jpg" alt="Ludus Logo" class="h-8 w-auto" />
           </div>
         </div>
@@ -54,32 +51,24 @@
           <div class="relative">
             <button @click="showProfileMenu = !showProfileMenu" class="flex items-center space-x-2 text-gray-700 hover:text-gray-900">
               <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-  <span class="text-primary-700 text-sm font-medium">{{ user.name ? user.name.charAt(0).toUpperCase() : 'A' }}</span>
-</div>
+                <span class="text-primary-700 text-sm font-medium">{{ user.name ? user.name.charAt(0).toUpperCase() : 'A' }}</span>
+              </div>
               <span class="text-sm font-medium">{{ user.name || 'Admin' }}</span>
               <ChevronDownIcon class="h-4 w-4" />
             </button>
 
             <!-- Profile Dropdown -->
-            <!-- Profile Dropdown -->
-<div v-if="showProfileMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-  <!-- Thông tin user -->
-  <div class="px-4 py-2 border-b border-gray-100">
-    <p class="text-sm font-medium text-gray-900">{{ user.name }}</p>
-    <p class="text-xs text-gray-500">{{ user.email }}</p>
-  </div>
-
-  <!-- Các link khác -->
-  <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Hồ sơ</NuxtLink>
-  <NuxtLink to="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cài đặt</NuxtLink>
-  <NuxtLink @click.prevent="logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-  Đăng xuất
-</NuxtLink>
-  <!-- Nút đăng xuất -->
-  
-
-</div>
-
+            <div v-if="showProfileMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+              <div class="px-4 py-2 border-b border-gray-100">
+                <p class="text-sm font-medium text-gray-900">{{ user.name }}</p>
+                <p class="text-xs text-gray-500">{{ user.email }}</p>
+              </div>
+              <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Hồ sơ</NuxtLink>
+              <NuxtLink to="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cài đặt</NuxtLink>
+              <NuxtLink @click.prevent="logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                Đăng xuất
+              </NuxtLink>
+            </div>
           </div>
         </div>
       </div>
@@ -110,8 +99,12 @@
                 :class="isActive(item.href) ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-600'"
               />
               {{ item.name }}
-              <span v-if="item.badge" class="ml-auto inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                {{ item.badge }}
+              <!-- 🔥 FIX: Hiển thị badge động từ orderCount -->
+              <span 
+                v-if="item.href === '/orders' && orderCount !== null && orderCount > 0" 
+                class="ml-auto inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+              >
+                {{ orderCount }}
               </span>
             </NuxtLink>
           </div>
@@ -186,17 +179,46 @@ import {
 } from '@heroicons/vue/24/outline'
 import { provide } from 'vue'
 import { useNotification } from '~/composables/useNotfication'
+import { useOrder } from '~/composables/useOrder'
 import NotificationComponent from '~/components/ui/NotificationComponent.vue'
-
-
 
 const route = useRoute()
 const sidebarOpen = ref(false)
 const showProfileMenu = ref(false)
 const searchQuery = ref('')
-const userInitial = ref('U')
+const orderCount = ref(null) // 🔥 THÊM: State để lưu số đơn hàng
 
 const user = ref({ name: '', email: '' })
+
+// 🔥 THÊM: Fetch order count
+const { getAllOrder } = useOrder()
+
+const fetchOrderCount = async () => {
+  try {
+    console.log('🔍 Fetching order count...')
+    const response = await getAllOrder({ limit: 10000, offset: 0 })
+    
+    const orders = response.data?.data || response.data || []
+    orderCount.value = orders.length
+    
+    console.log('✅ Order count:', orderCount.value)
+  } catch (error) {
+    console.error('❌ Error fetching order count:', error)
+    orderCount.value = 0
+  }
+}
+
+// 🔥 THÊM: Gọi fetch khi component mount
+onMounted(() => {
+  fetchOrderCount()
+  
+  // Auto refresh mỗi 30 giây (optional)
+  const interval = setInterval(() => {
+    fetchOrderCount()
+  }, 30000)
+  
+  onUnmounted(() => clearInterval(interval))
+})
 
 if (process.client) {
   const saved = localStorage.getItem('admin_user')
@@ -215,18 +237,17 @@ const logout = () => {
   window.location.href = '/login'
 }
 
-
+// 🔥 SỬA: Bỏ badge hardcode '12'
 const mainNavigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon, badge: null },
-  { name: 'Đơn hàng', href: '/orders', icon: ShoppingCartIcon, badge: '12' },
+  { name: 'Đơn hàng', href: '/orders', icon: ShoppingCartIcon, badge: null }, // Bỏ badge: '12'
   { name: 'Khách hàng', href: '/customers', icon: UsersIcon, badge: null },
 ]
 
 const managementNavigation = [
   { name: 'Sản phẩm', href: '/product', icon: ShoppingBagIcon },
   { name: 'Danh mục', href: '/category', icon: TagIcon },
-{ name: 'Biến thể sản phẩm', href: '/product-variant', icon: DocumentTextIcon },
- // { name: 'Hình ảnh SP', href: '/product-images', icon: PhotoIcon },
+  { name: 'Biến thể sản phẩm', href: '/product-variant', icon: DocumentTextIcon },
   { name: 'Đánh giá', href: '/reviews', icon: StarIcon },
 ]
 
@@ -236,7 +257,6 @@ const toolsNavigation = [
   { name: 'Phương thức TT', href: '/payment-methods', icon: CreditCardIcon },
   { name: 'Địa chỉ KH', href: '/addresses', icon: MapPinIcon },
   { name: 'Giỏ hàng', href: '/carts', icon: ShoppingCartIcon },
-  //{ name: 'Yêu thích', href: '/wishlist', icon: HeartIcon },
   { name: 'Tin nhắn', href: '/messages', icon: ChatBubbleLeftIcon },
   { name: 'Báo cáo', href: '/reports', icon: ChartBarIcon },
   { name: 'Cài đặt', href: '/settings', icon: CogIcon },
@@ -253,6 +273,11 @@ const isActive = (href) => {
 
 watch(() => route.path, () => {
   sidebarOpen.value = false
+  
+  // 🔥 THÊM: Refresh order count khi chuyển trang
+  if (route.path === '/orders') {
+    fetchOrderCount()
+  }
 })
 
 onMounted(() => {
@@ -264,12 +289,12 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 })
+
 const notification = useNotification()
 provide('notification', notification)
 </script>
 
 <style scoped>
-
 nav::-webkit-scrollbar {
   width: 4px;
 }

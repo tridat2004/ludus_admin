@@ -388,7 +388,7 @@ const stats = ref({
 })
 
 const pagination = ref({
-  total: 0, totalPages: 0, limit: 10, offset: 0
+  total: 0, totalPages: 0, limit: 6, offset: 0
 })
 
 // Debounce
