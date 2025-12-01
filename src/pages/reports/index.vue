@@ -8,12 +8,12 @@
       </div>
       
       <div class="flex items-center space-x-3">
-        <select v-model="dateRange" @change="handleDateRangeChange" class="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm font-medium">
-          <option value="7">7 ngày qua</option>
-          <option value="30">30 ngày qua</option>
-          <option value="90">90 ngày qua</option>
-          <option value="365">12 tháng qua</option>
+        <!-- Chọn tháng -->
+        <select v-model="selectedMonth" @change="handleMonthChange" class="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm font-medium">
+          <option :value="null">Tất cả</option>
+          <option v-for="m in 12" :key="m" :value="m">Tháng {{ m }}</option>
         </select>
+        
         <button @click="exportReport" class="px-5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center">
           <ChartBarIcon class="h-5 w-5 mr-2" />
           Xuất báo cáo
@@ -41,8 +41,8 @@
             <div class="ml-5">
               <p class="text-sm text-gray-600 mb-1">Tổng doanh thu</p>
               <h3 class="text-xl font-bold text-gray-900">{{ formatCurrency(totalRevenue) }}</h3>
-              <p class="text-xs mt-1" :class="revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'">
-                {{ revenueGrowth >= 0 ? '+' : '' }}{{ revenueGrowth.toFixed(1) }}% so với kỳ trước
+              <p class="text-xs mt-1 text-green-600">
+                Từ {{ revenueData?.pagination?.total || 0 }} thanh toán
               </p>
             </div>
           </div>
@@ -56,8 +56,8 @@
             <div class="ml-5">
               <p class="text-sm text-gray-600 mb-1">Tổng đơn hàng</p>
               <h3 class="text-xl font-bold text-gray-900">{{ totalOrders }}</h3>
-              <p class="text-xs mt-1" :class="ordersGrowth >= 0 ? 'text-green-600' : 'text-red-600'">
-                {{ ordersGrowth >= 0 ? '+' : '' }}{{ ordersGrowth.toFixed(1) }}% so với kỳ trước
+              <p class="text-xs mt-1 text-gray-500">
+                Delivered + Cancelled
               </p>
             </div>
           </div>
@@ -72,7 +72,7 @@
               <p class="text-sm text-gray-600 mb-1">Đơn hoàn thành</p>
               <h3 class="text-xl font-bold text-gray-900">{{ completedOrders }}</h3>
               <p class="text-xs mt-1 text-green-600">
-                {{ completionRate.toFixed(1) }}% tỷ lệ hoàn thành
+                {{ safeFixed(completionRate) }}% tỷ lệ hoàn thành
               </p>
             </div>
           </div>
@@ -103,7 +103,6 @@
             <select v-model="chartGroupBy" @change="updateRevenueChart" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
               <option value="day">Theo ngày</option>
               <option value="week">Theo tuần</option>
-              <option value="month">Theo tháng</option>
             </select>
           </div>
           <div class="card-body">
@@ -126,7 +125,7 @@
                 <div class="ml-3 flex-1">
                   <p class="text-sm font-medium text-gray-900">{{ product.name }}</p>
                   <div class="mt-1 w-full bg-gray-200 rounded-full h-1.5">
-                    <div class="bg-gradient-to-r from-primary-500 to-orange-500 h-1.5 rounded-full" :style="{ width: product.percentage + '%' }"></div>
+                    <div class="bg-gradient-to-r from-primary-500 to-orange-500 h-1.5 rounded-full animate-progress" :style="{ width: product.percentage + '%' }"></div>
                   </div>
                 </div>
                 <span class="ml-4 text-sm font-semibold text-gray-900">{{ product.count }}</span>
@@ -142,37 +141,16 @@
           </div>
           <div class="card-body">
             <div class="w-full max-w-sm mx-auto mb-4">
-  <canvas ref="pieChartCanvas" class="w-full"></canvas>
-</div>
+              <canvas ref="pieChartCanvas" class="w-full"></canvas>
+            </div>
 
             <div class="space-y-2">
               <div v-for="status in orderStatusData" :key="status.label" class="flex items-center justify-between">
                 <div class="flex items-center">
-                  <span class="w-3 h-3 rounded-full mr-2" :style="{ backgroundColor: status.color }"></span>
+                  <span class="w-3 h-3 rounded-full mr-2 animate-pulse" :style="{ backgroundColor: status.color }"></span>
                   <span class="text-sm text-gray-700">{{ status.label }}</span>
                 </div>
                 <span class="text-sm font-semibold text-gray-900">{{ status.percentage }}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Traffic Sources -->
-      <div class="card mb-6">
-        <div class="card-header">
-          <h3 class="text-lg font-semibold text-gray-900">Nguồn traffic</h3>
-        </div>
-        <div class="card-body">
-          <div class="space-y-3">
-            <div v-for="(source, i) in trafficSources" :key="i" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div class="flex items-center">
-                <span class="text-xl mr-3">🌐</span>
-                <span class="font-medium text-gray-900">{{ source.name }}</span>
-              </div>
-              <div class="flex items-center space-x-4">
-                <span class="font-semibold text-gray-900">{{ source.percentage }}%</span>
-                <span class="text-sm text-gray-600">{{ source.count }}</span>
               </div>
             </div>
           </div>
@@ -238,16 +216,12 @@ definePageMeta({
 })
 
 // Composables
-const { getAllOrder } = useOrder()
-const { getProducts } = useProduct()
 const { notify } = useNotification()
+const { loading, allOrders, allProducts, revenueData, fetchData } = useReport()
 
 // State
-const loading = ref(false)
-const dateRange = ref('30')
+const selectedMonth = ref(null)
 const chartGroupBy = ref('day')
-const allOrders = ref([])
-const allProducts = ref([])
 
 // Chart refs và instances
 const revenueChartCanvas = ref(null)
@@ -255,38 +229,17 @@ const pieChartCanvas = ref(null)
 let revenueChartInstance = null
 let pieChartInstance = null
 
-// Traffic sources - Mock data
-const trafficSources = ref([
-  { name: 'Direct', percentage: 30, count: 5000 },
-  { name: 'Google', percentage: 25, count: 4200 },
-  { name: 'Facebook', percentage: 20, count: 3400 },
-  { name: 'Instagram', percentage: 15, count: 2600 },
-  { name: 'Other', percentage: 10, count: 1800 }
-])
-
-// Computed - Filtered orders
-const filteredOrders = computed(() => {
-  const days = parseInt(dateRange.value)
-  const cutoffDate = new Date()
-  cutoffDate.setDate(cutoffDate.getDate() - days)
-  
-  return allOrders.value.filter(order => {
-    if (!order.orderDate) return false
-    return new Date(order.orderDate) >= cutoffDate
-  })
-})
-
-// Computed - Total revenue
+// Computed - Total revenue từ BE
 const totalRevenue = computed(() => {
-  return filteredOrders.value.reduce((sum, order) => sum + (order.totalAmount || 0), 0)
+  return revenueData.value?.totalRevenue || 0
 })
 
 // Computed - Total orders
-const totalOrders = computed(() => filteredOrders.value.length)
+const totalOrders = computed(() => allOrders.value.length)
 
 // Computed - Completed orders
 const completedOrders = computed(() => {
-  return filteredOrders.value.filter(o => o.status === 'Delivered').length
+  return allOrders.value.filter(o => o.status === 'Delivered').length
 })
 
 // Computed - Completion rate
@@ -296,49 +249,14 @@ const completionRate = computed(() => {
 
 // Computed - Average order value
 const avgOrderValue = computed(() => {
-  return totalOrders.value > 0 ? totalRevenue.value / totalOrders.value : 0
-})
-
-// Computed - Revenue growth
-const revenueGrowth = computed(() => {
-  const days = parseInt(dateRange.value)
-  const previousPeriod = allOrders.value.filter(order => {
-    if (!order.orderDate) return false
-    const date = new Date(order.orderDate)
-    const cutoffStart = new Date()
-    cutoffStart.setDate(cutoffStart.getDate() - days * 2)
-    const cutoffEnd = new Date()
-    cutoffEnd.setDate(cutoffEnd.getDate() - days)
-    return date >= cutoffStart && date < cutoffEnd
-  })
-  
-  const prevRevenue = previousPeriod.reduce((sum, o) => sum + (o.totalAmount || 0), 0)
-  if (prevRevenue === 0) return 0
-  return ((totalRevenue.value - prevRevenue) / prevRevenue) * 100
-})
-
-// Computed - Orders growth
-const ordersGrowth = computed(() => {
-  const days = parseInt(dateRange.value)
-  const previousPeriod = allOrders.value.filter(order => {
-    if (!order.orderDate) return false
-    const date = new Date(order.orderDate)
-    const cutoffStart = new Date()
-    cutoffStart.setDate(cutoffStart.getDate() - days * 2)
-    const cutoffEnd = new Date()
-    cutoffEnd.setDate(cutoffEnd.getDate() - days)
-    return date >= cutoffStart && date < cutoffEnd
-  })
-  
-  if (previousPeriod.length === 0) return 0
-  return ((totalOrders.value - previousPeriod.length) / previousPeriod.length) * 100
+  return completedOrders.value > 0 ? totalRevenue.value / completedOrders.value : 0
 })
 
 // Computed - Top products
 const topProducts = computed(() => {
   const productCount = {}
   
-  filteredOrders.value.forEach(order => {
+  allOrders.value.forEach(order => {
     if (order.orderDetails && Array.isArray(order.orderDetails)) {
       order.orderDetails.forEach(detail => {
         const productId = detail.productVariantId || detail.productId || 'unknown'
@@ -367,48 +285,23 @@ const topProducts = computed(() => {
   })
 })
 
-// Computed - Order status data
+// Computed - Order status data (CHỈ 2 STATUS)
 const orderStatusData = computed(() => {
-  const statusCount = {
-    Delivered: 0,
-    Processing: 0,
-    Pending: 0,
-    Confirmed: 0,
-    Shipped: 0,
-    Cancelled: 0
-  }
-  
-  filteredOrders.value.forEach(order => {
-    if (statusCount.hasOwnProperty(order.status)) {
-      statusCount[order.status]++
-    }
-  })
-  
-  const total = filteredOrders.value.length || 1
+  const deliveredCount = allOrders.value.filter(o => o.status === 'Delivered').length
+  const cancelledCount = allOrders.value.filter(o => o.status === 'Cancelled').length
+  const total = allOrders.value.length || 1
   
   return [
     { 
       label: 'Hoàn thành', 
-      value: statusCount.Delivered, 
-      percentage: ((statusCount.Delivered / total) * 100).toFixed(1), 
+      value: deliveredCount, 
+      percentage: ((deliveredCount / total) * 100).toFixed(1), 
       color: '#10b981' 
     },
     { 
-      label: 'Đang xử lý', 
-      value: statusCount.Processing + statusCount.Confirmed + statusCount.Shipped, 
-      percentage: (((statusCount.Processing + statusCount.Confirmed + statusCount.Shipped) / total) * 100).toFixed(1), 
-      color: '#f59e0b' 
-    },
-    { 
-      label: 'Chờ xác nhận', 
-      value: statusCount.Pending, 
-      percentage: ((statusCount.Pending / total) * 100).toFixed(1), 
-      color: '#3b82f6' 
-    },
-    { 
       label: 'Đã hủy', 
-      value: statusCount.Cancelled, 
-      percentage: ((statusCount.Cancelled / total) * 100).toFixed(1), 
+      value: cancelledCount, 
+      percentage: ((cancelledCount / total) * 100).toFixed(1), 
       color: '#ef4444' 
     }
   ]
@@ -416,7 +309,7 @@ const orderStatusData = computed(() => {
 
 // Computed - Recent transactions
 const recentTransactions = computed(() => {
-  return [...filteredOrders.value]
+  return [...allOrders.value]
     .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))
     .slice(0, 10)
     .map(order => {
@@ -434,10 +327,13 @@ const recentTransactions = computed(() => {
 const prepareRevenueChartData = () => {
   const grouped = {}
   
-  filteredOrders.value.forEach(order => {
-    if (!order.orderDate) return
+  // Dùng data từ revenueData.value.data (payments)
+  const payments = revenueData.value?.data || []
+  
+  payments.forEach(payment => {
+    if (!payment.updatedAt) return
     
-    const date = new Date(order.orderDate)
+    const date = new Date(payment.updatedAt)
     let key
     
     if (chartGroupBy.value === 'day') {
@@ -445,11 +341,9 @@ const prepareRevenueChartData = () => {
     } else if (chartGroupBy.value === 'week') {
       const weekNum = Math.ceil(date.getDate() / 7)
       key = `Tuần ${weekNum}`
-    } else if (chartGroupBy.value === 'month') {
-      key = date.toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' })
     }
     
-    grouped[key] = (grouped[key] || 0) + (order.totalAmount || 0)
+    grouped[key] = (grouped[key] || 0) + (payment.amount || 0)
   })
   
   const sortedEntries = Object.entries(grouped).sort((a, b) => a[0].localeCompare(b[0]))
@@ -460,12 +354,9 @@ const prepareRevenueChartData = () => {
   }
 }
 
-// Render Revenue Chart
+// Render Revenue Chart với animation
 const renderRevenueChart = () => {
-  if (!revenueChartCanvas.value || typeof Chart === 'undefined') {
-    console.warn('Canvas or Chart.js not ready')
-    return
-  }
+  if (!revenueChartCanvas.value || typeof Chart === 'undefined') return
   
   if (revenueChartInstance) {
     revenueChartInstance.destroy()
@@ -501,6 +392,10 @@ const renderRevenueChart = () => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: {
+        duration: 2000,
+        easing: 'easeInOutQuart'
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -521,42 +416,25 @@ const renderRevenueChart = () => {
               if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M'
               if (value >= 1000) return (value / 1000).toFixed(0) + 'K'
               return value
-            },
-            font: { size: 11 }
-          },
-          grid: { color: 'rgba(0, 0, 0, 0.05)' }
-        },
-        x: {
-          grid: { display: false },
-          ticks: {
-            font: { size: 11 },
-            maxRotation: 45,
-            minRotation: 45
+            }
           }
         }
       }
     }
   })
-  
-  console.log('✅ Revenue chart rendered')
 }
 
-// Render Pie Chart
+// Render Pie Chart với animation
 const renderPieChart = () => {
-  if (!pieChartCanvas.value || typeof Chart === 'undefined') {
-    console.warn('Canvas or Chart.js not ready')
-    return
-  }
+  if (!pieChartCanvas.value || typeof Chart === 'undefined') return
   
   if (pieChartInstance) {
     pieChartInstance.destroy()
-    pieChartInstance = null
   }
   
   const ctx = pieChartCanvas.value.getContext('2d')
   const hasData = orderStatusData.value.some(s => s.value > 0)
   
-  // Lấy snapshot của data để tránh reactivity issues
   const chartLabels = hasData ? orderStatusData.value.map(s => s.label) : ['Không có dữ liệu']
   const chartData = hasData ? orderStatusData.value.map(s => s.value) : [1]
   const chartColors = hasData ? orderStatusData.value.map(s => s.color) : ['rgba(200, 200, 200, 0.3)']
@@ -579,7 +457,10 @@ const renderPieChart = () => {
       responsive: true,
       maintainAspectRatio: false,
       animation: {
-        duration: 750
+        duration: 1500,
+        easing: 'easeInOutQuart',
+        animateRotate: true,
+        animateScale: true
       },
       plugins: {
         legend: { display: false },
@@ -587,8 +468,6 @@ const renderPieChart = () => {
           enabled: true,
           backgroundColor: 'rgba(0, 0, 0, 0.8)',
           padding: 12,
-          titleFont: { size: 14, weight: 'bold' },
-          bodyFont: { size: 13 },
           callbacks: {
             label: (context) => {
               if (!hasData) return 'Không có dữ liệu'
@@ -603,8 +482,6 @@ const renderPieChart = () => {
       cutout: '65%'
     }
   })
-  
-  console.log('✅ Pie chart rendered')
 }
 
 // Render all charts
@@ -613,39 +490,11 @@ const renderCharts = () => {
   renderPieChart()
 }
 
-// Fetch data
-const fetchData = async () => {
-  loading.value = true
-  try {
-    const ordersRes = await getAllOrder({ limit: 10000, offset: 0 })
-    allOrders.value = ordersRes.data?.data || ordersRes.data || []
-    
-    try {
-      const productsRes = await getProducts({ limit: 10000, offset: 0 })
-      allProducts.value = productsRes.data?.data || productsRes.data || []
-    } catch (err) {
-      console.warn('Could not fetch products:', err)
-      allProducts.value = []
-    }
-    
-    notify('Tải báo cáo thành công', 'success')
-  } catch (error) {
-    console.error('Error fetching report data:', error)
-    notify('Lỗi tải dữ liệu báo cáo', 'error')
-  } finally {
-    loading.value = false
-    await nextTick()
-    setTimeout(() => {
-      if (typeof Chart !== 'undefined') {
-        renderCharts()
-      }
-    }, 100)
-  }
-}
-
-const handleDateRangeChange = async () => {
+// Handle month change
+const handleMonthChange = async () => {
+  await fetchData({ month: selectedMonth.value })
   await nextTick()
-  setTimeout(() => renderCharts(), 50)
+  setTimeout(() => renderCharts(), 100)
 }
 
 const updateRevenueChart = async () => {
@@ -653,31 +502,24 @@ const updateRevenueChart = async () => {
   setTimeout(() => renderRevenueChart(), 50)
 }
 
-// Export báo cáo tổng quan
+// Export báo cáo
 const exportReport = () => {
   try {
     notify('Đang xuất báo cáo...', 'info')
     
-    // Tạo workbook mới
     const wb = XLSX.utils.book_new()
     
-    // Lấy giá trị computed và convert sang number
-    const revenueGrowthValue = Number(revenueGrowth.value) || 0
-    const ordersGrowthValue = Number(ordersGrowth.value) || 0
-    const completionRateValue = Number(completionRate.value) || 0
-    
-    // Sheet 1: Thống kê tổng quan
     const summaryData = [
       ['BÁO CÁO THỐNG KÊ'],
-      ['Thời gian:', `${dateRange.value} ngày qua`],
+      ['Tháng:', selectedMonth.value ? `Tháng ${selectedMonth.value}` : 'Tất cả'],
       ['Ngày xuất:', new Date().toLocaleString('vi-VN')],
       [],
       ['CHỈ SỐ TỔNG QUAN'],
-      ['Chỉ số', 'Giá trị', 'Tăng trưởng'],
-      ['Tổng doanh thu', formatCurrency(totalRevenue.value), `${revenueGrowthValue.toFixed(1)}%`],
-      ['Tổng đơn hàng', totalOrders.value, `${ordersGrowthValue.toFixed(1)}%`],
-      ['Đơn hoàn thành', completedOrders.value, `${completionRateValue.toFixed(1)}%`],
-      ['Giá trị TB/đơn', formatCurrency(avgOrderValue.value), ''],
+      ['Chỉ số', 'Giá trị'],
+      ['Tổng doanh thu', formatCurrency(totalRevenue.value)],
+      ['Tổng đơn hàng', totalOrders.value],
+      ['Đơn hoàn thành', completedOrders.value],
+      ['Giá trị TB/đơn', formatCurrency(avgOrderValue.value)],
       [],
       ['PHÂN LOẠI ĐƠN HÀNG'],
       ['Trạng thái', 'Số lượng', 'Tỷ lệ'],
@@ -685,63 +527,9 @@ const exportReport = () => {
     ]
     
     const ws1 = XLSX.utils.aoa_to_sheet(summaryData)
-    
-    // Styling cho sheet 1
-    ws1['!cols'] = [
-      { width: 25 },
-      { width: 20 },
-      { width: 15 }
-    ]
-    
     XLSX.utils.book_append_sheet(wb, ws1, 'Tổng quan')
     
-    // Sheet 2: Top sản phẩm
-    if (topProducts.value.length > 0) {
-      const productData = [
-        ['TOP SẢN PHẨM BÁN CHẠY'],
-        ['STT', 'Tên sản phẩm', 'Số lượng bán', 'Tỷ lệ'],
-        ...topProducts.value.map((p, i) => [
-          i + 1,
-          p.name,
-          p.count,
-          `${p.percentage.toFixed(1)}%`
-        ])
-      ]
-      
-      const ws2 = XLSX.utils.aoa_to_sheet(productData)
-      ws2['!cols'] = [
-        { width: 8 },
-        { width: 40 },
-        { width: 15 },
-        { width: 12 }
-      ]
-      
-      XLSX.utils.book_append_sheet(wb, ws2, 'Top sản phẩm')
-    }
-    
-    // Sheet 3: Doanh thu theo thời gian
-    const revenueData = prepareRevenueChartData()
-    if (revenueData.labels.length > 0) {
-      const timeData = [
-        ['DOANH THU THEO THỜI GIAN'],
-        ['Thời gian', 'Doanh thu (VNĐ)'],
-        ...revenueData.labels.map((label, i) => [
-          label,
-          revenueData.data[i]
-        ])
-      ]
-      
-      const ws3 = XLSX.utils.aoa_to_sheet(timeData)
-      ws3['!cols'] = [
-        { width: 20 },
-        { width: 20 }
-      ]
-      
-      XLSX.utils.book_append_sheet(wb, ws3, 'Doanh thu')
-    }
-    
-    // Xuất file
-    const fileName = `Bao_cao_${dateRange.value}_ngay_${new Date().toISOString().split('T')[0]}.xlsx`
+    const fileName = `Bao_cao_${selectedMonth.value ? `thang_${selectedMonth.value}` : 'tat_ca'}_${new Date().toISOString().split('T')[0]}.xlsx`
     XLSX.writeFile(wb, fileName)
     
     notify('Xuất báo cáo thành công!', 'success')
@@ -758,10 +546,9 @@ const exportExcel = () => {
     
     const wb = XLSX.utils.book_new()
     
-    // Chuẩn bị dữ liệu giao dịch
     const transactionData = [
       ['CHI TIẾT GIAO DỊCH'],
-      ['Thời gian:', `${dateRange.value} ngày qua`],
+      ['Tháng:', selectedMonth.value ? `Tháng ${selectedMonth.value}` : 'Tất cả'],
       ['Ngày xuất:', new Date().toLocaleString('vi-VN')],
       ['Tổng số giao dịch:', recentTransactions.value.length],
       [],
@@ -778,21 +565,8 @@ const exportExcel = () => {
     ]
     
     const ws = XLSX.utils.aoa_to_sheet(transactionData)
-    
-    // Styling
-    ws['!cols'] = [
-      { width: 12 },
-      { width: 12 },
-      { width: 25 },
-      { width: 10 },
-      { width: 12 },
-      { width: 15 },
-      { width: 15 }
-    ]
-    
     XLSX.utils.book_append_sheet(wb, ws, 'Giao dịch')
     
-    // Xuất file
     const fileName = `Chi_tiet_giao_dich_${new Date().toISOString().split('T')[0]}.xlsx`
     XLSX.writeFile(wb, fileName)
     
@@ -817,27 +591,11 @@ const formatDate = (date) => {
 }
 
 const getStatusClass = (status) => {
-  const map = {
-    Delivered: 'badge-success',
-    Processing: 'badge-primary',
-    Confirmed: 'badge-info',
-    Shipped: 'badge-info',
-    Pending: 'badge-warning',
-    Cancelled: 'badge-secondary'
-  }
-  return map[status] || 'badge-secondary'
+  return status === 'Delivered' ? 'badge-success' : 'badge-secondary'
 }
 
 const getStatusText = (status) => {
-  const map = {
-    Pending: 'Chờ xác nhận',
-    Confirmed: 'Đã xác nhận',
-    Processing: 'Đang xử lý',
-    Shipped: 'Đang giao',
-    Delivered: 'Hoàn thành',
-    Cancelled: 'Đã hủy'
-  }
-  return map[status] || status
+  return status === 'Delivered' ? 'Hoàn thành' : 'Đã hủy'
 }
 
 // Load Chart.js và XLSX
@@ -888,20 +646,22 @@ onMounted(async () => {
   try {
     await loadChartJs()
     await loadXLSX()
-    await fetchData()
+    await fetchData({ month: selectedMonth.value })
+    await nextTick()
+    setTimeout(() => renderCharts(), 100)
+    notify('Tải báo cáo thành công', 'success')
   } catch (error) {
     console.error('Error initializing reports page:', error)
-    notify('Lỗi khởi tạo trang báo cáo', 'error')
+    notify('Lỗi tải dữ liệu báo cáo', 'error')
   }
 })
-
+const safeFixed = (val, digits = 1) => {
+  const num = Number(val)
+  return isNaN(num) ? '0.0' : num.toFixed(digits)
+}
 onUnmounted(() => {
-  if (revenueChartInstance) {
-    revenueChartInstance.destroy()
-  }
-  if (pieChartInstance) {
-    pieChartInstance.destroy()
-  }
+  if (revenueChartInstance) revenueChartInstance.destroy()
+  if (pieChartInstance) pieChartInstance.destroy()
 })
 </script>
 
@@ -919,6 +679,14 @@ onUnmounted(() => {
 }
 
 .badge-success { @apply bg-green-100 text-green-800; }
-.badge-info { @apply bg-blue-100 text-blue-800; }
-.badge-primary { @apply bg-indigo-100 text-indigo-800; }
+.badge-secondary { @apply bg-red-100 text-red-800; }
+
+@keyframes progress {
+  from { width: 0; }
+  to { width: var(--target-width); }
+}
+
+.animate-progress {
+  animation: progress 1.5s ease-out forwards;
+}
 </style>
