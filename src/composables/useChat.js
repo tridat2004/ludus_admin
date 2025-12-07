@@ -1,7 +1,7 @@
 import { ref, nextTick } from "vue";
 import { io } from "socket.io-client";
 import axios from "axios";
-
+import { useAlertBadge } from "~/composables/useAlertBadge";
 export const useChat = () => {
   const config = useRuntimeConfig();
 
@@ -14,12 +14,12 @@ export const useChat = () => {
   const activeUser = useState("activeUser", () => null);
   const messageText = useState("messageText", () => "");
   const typingUserId = useState("typingUserId", () => null);
-
+  const { increase } = useAlertBadge();
   const pagination = useState("pagination", () => ({
     cursor: null,
     hasMore: true
   }));
-
+  
   const loadingMore = useState("loadingMore", () => false);
   const uploadingFile = useState("uploadingFile", () => false);
 
@@ -51,27 +51,57 @@ export const useChat = () => {
   const socket = useState("socket", () => null);
 
   if (process.client && !socket.value) {
-    socket.value = io(SOCKET_URL, { withCredentials: true });
 
-    // Receive real-time messages
-    socket.value.on("chat:new_message", (data) => {
-      if (
-        activeUser.value &&
-        (data.message.senderId === activeUser.value.id ||
-          data.message.receiverId === activeUser.value.id)
-      ) {
-        messages.value.push(data.message);
-        scrollBottom();
-      }
+  // KHỞI TẠO SOCKET
+  socket.value = io(SOCKET_URL, { withCredentials: true });
 
-      loadChatList();
-    });
+  // 🔥 LẮNG NGHE NOTIFICATION SAU KHI SOCKET ĐÃ TẠO
+  socket.value.on("notification:new_event", () => {
+    increase(); // tăng badge icon chuông
+  });
 
-    // Typing indicator
-    socket.value.on("chat:user_typing", (data) => {
-      typingUserId.value = data.isTyping ? data.senderId : null;
-    });
-  }
+  // 🔥 New message realtime
+  socket.value.on("chat:new_message", ({ message }) => {
+    const isCurrentChat =
+      activeUser.value &&
+      (message.senderId === activeUser.value.id ||
+       message.receiverId === activeUser.value.id);
+    if (!activeUser.value || activeUser.value.id !== message.senderId) {
+    const unread = useState("unreadMessageCount");
+    unread.value++;
+}
+    if (isCurrentChat) {
+      messages.value.push(message);
+      scrollBottom();
+
+      const chat = chatList.value.find(
+        c => c.otherUser.id === message.senderId || c.otherUser.id === message.receiverId
+      );
+      if (chat) chat.unreadCount = 0;
+
+      return;
+    }
+
+    const chat = chatList.value.find(c => c.otherUser.id === message.senderId);
+    if (chat) chat.unreadCount++;
+
+    loadChatList();
+  });
+
+  // Typing
+  socket.value.on("chat:user_typing", (data) => {
+    typingUserId.value = data.isTyping ? data.senderId : null;
+  });
+
+  // Reset unread
+  socket.value.on("chat:messages_read", ({ senderId }) => {
+    const chat = chatList.value.find(c => c.otherUser.id === senderId);
+    if (chat) chat.unreadCount = 0;
+  });
+
+}
+
+
 
   // ===== LOAD CHAT LIST =====
   const loadChatList = async () => {
@@ -109,17 +139,23 @@ export const useChat = () => {
   };
 
   // ===== SELECT USER =====
-  const selectUser = async (user) => {
-    activeUser.value = user;
+ const selectUser = async (user) => {
+  activeUser.value = user;
 
-    messages.value = [];
-    pagination.value = { cursor: null, hasMore: true };
+  // ⭐ Reset unread ngay lập tức
+  const chat = chatList.value.find(c => c.otherUser.id === user.id);
+  if (chat) chat.unreadCount = 0;
 
-    await loadMessages();
-    scrollBottom();
+  messages.value = [];
+  pagination.value = { cursor: null, hasMore: true };
 
-    socket.value.emit("chat:read_messages", { senderId: user.id });
-  };
+  await loadMessages();
+  scrollBottom();
+
+  // thông báo BE (không bắt buộc nhưng giữ lại cũng OK)
+  socket.value.emit("chat:read_messages", { senderId: user.id });
+};
+
 
   // ===== SEND TEXT MESSAGE =====
   const sendTextMessage = () => {

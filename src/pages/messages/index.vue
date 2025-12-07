@@ -26,6 +26,8 @@ const {
 // Khi mount → load chat list
 onMounted(async () => {
   await loadChatList();
+  const { reset } = useAlertBadge();
+  reset();
 });
 
 // Khi rời trang → cleanup socket listener

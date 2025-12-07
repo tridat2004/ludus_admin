@@ -35,12 +35,17 @@
         <!-- Right Menu -->
         <div class="flex items-center space-x-4">
           <!-- Notifications -->
-          <button class="relative text-gray-600 hover:text-gray-900">
-            <BellIcon class="h-6 w-6" />
-            <span class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center">
-              <span class="text-white text-xs">3</span>
-            </span>
-          </button>
+          <button class="relative text-gray-600 hover:text-gray-900" @click="reset">
+  <BellIcon class="h-6 w-6" />
+
+  <!-- Hiển thị badge -->
+  <span
+    v-if="badgeCount > 0"
+    class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center"
+  >
+    <span class="text-white text-xs">{{ badgeCount }}</span>
+  </span>
+</button>
 
           <!-- Quick Actions -->
           <button class="text-gray-600 hover:text-gray-900">
@@ -99,6 +104,13 @@
                 :class="isActive(item.href) ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-600'"
               />
               {{ item.name }}
+              <span
+  v-if="item.badgeKey === 'messages' && unreadMessageCount > 0"
+  class="ml-auto inline-flex items-center px-2.5 py-0.5 rounded-full 
+         text-xs font-medium bg-red-100 text-red-800"
+>
+  {{ unreadMessageCount }}
+</span>
               <!-- 🔥 FIX: Hiển thị badge động từ orderCount -->
               <span 
                 v-if="item.href === '/orders' && orderCount !== null && orderCount > 0" 
@@ -138,21 +150,31 @@
           <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Công cụ</h3>
           <div class="mt-3 space-y-1">
             <NuxtLink 
-              v-for="item in toolsNavigation" 
-              :key="item.name"
-              :to="item.href"
-              class="group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200"
-              :class="isActive(item.href)
-                ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-700' 
-                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'"
-            >
-              <component 
-                :is="item.icon" 
-                class="mr-3 h-5 w-5 transition-colors"
-                :class="isActive(item.href) ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-600'"
-              />
-              {{ item.name }}
-            </NuxtLink>
+  v-for="item in toolsNavigation" 
+  :key="item.name"
+  :to="item.href"
+  class="group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200"
+  :class="isActive(item.href)
+    ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-700' 
+    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'"
+>
+  <component 
+    :is="item.icon" 
+    class="mr-3 h-5 w-5 transition-colors"
+    :class="isActive(item.href) ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-600'"
+  />
+
+  {{ item.name }}
+
+  <!-- ⭐ Badge tin nhắn -->
+  <span
+    v-if="item.badgeKey === 'messages' && unreadMessageCount > 0"
+    class="ml-auto inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+  >
+    {{ unreadMessageCount }}
+  </span>
+</NuxtLink>
+
           </div>
         </div>
       </nav>
@@ -177,16 +199,20 @@ import {
   ChevronDownIcon, Bars3Icon, TagIcon, GiftIcon, PhotoIcon, StarIcon,
   CreditCardIcon, MapPinIcon, HeartIcon, ChatBubbleLeftIcon
 } from '@heroicons/vue/24/outline'
+import axios from "axios";
 import { provide } from 'vue'
 import { useNotification } from '~/composables/useNotfication'
 import { useOrder } from '~/composables/useOrder'
 import NotificationComponent from '~/components/ui/NotificationComponent.vue'
-
+import { useAlertBadge } from "~/composables/useAlertBadge";
+const { badgeCount, reset } = useAlertBadge();
 const route = useRoute()
 const sidebarOpen = ref(false)
 const showProfileMenu = ref(false)
 const searchQuery = ref('')
 const orderCount = ref(null) // 🔥 THÊM: State để lưu số đơn hàng
+const unreadMessageCount = ref(0);
+const config = useRuntimeConfig();
 
 const user = ref({ name: '', email: '' })
 
@@ -207,11 +233,24 @@ const fetchOrderCount = async () => {
     orderCount.value = 0
   }
 }
+const fetchUnreadMessages = async () => {
+  try {
+    const res = await axios.get(`${config.public.apiBase}/chat/unread-count`, {
+      withCredentials: true
+    });
+
+    unreadMessageCount.value = res.data?.data?.count || 0;
+    console.log("📩 Unread messages:", unreadMessageCount.value);
+  } catch (e) {
+    console.error("❌ Error fetching unread messages:", e);
+    unreadMessageCount.value = 0;
+  }
+};
 
 // 🔥 THÊM: Gọi fetch khi component mount
 onMounted(() => {
   fetchOrderCount()
-  
+  fetchUnreadMessages();
   // Auto refresh mỗi 30 giây (optional)
   const interval = setInterval(() => {
     fetchOrderCount()
@@ -257,7 +296,7 @@ const toolsNavigation = [
   { name: 'Phương thức TT', href: '/payment-methods', icon: CreditCardIcon },
   { name: 'Địa chỉ KH', href: '/addresses', icon: MapPinIcon },
   { name: 'Giỏ hàng', href: '/carts', icon: ShoppingCartIcon },
-  { name: 'Tin nhắn', href: '/messages', icon: ChatBubbleLeftIcon },
+   { name: 'Tin nhắn', href: '/messages', icon: ChatBubbleLeftIcon, badgeKey: "messages" },
   { name: 'Báo cáo', href: '/reports', icon: ChartBarIcon },
   { name: 'Cài đặt', href: '/settings', icon: CogIcon },
 ]

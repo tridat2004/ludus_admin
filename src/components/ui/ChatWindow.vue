@@ -139,7 +139,7 @@
         </div>
 
         <!-- Messages Area -->
-        <div
+        <div  ref="msgBox"
   class="flex-1 px-6 py-6 overflow-y-auto bg-gray-50"
   :style="`background-image: url('data:image/svg+xml,%3Csvg width=60 height=60 viewBox=0 0 60 60');`"
   @scroll="$emit('scroll', $event)"
@@ -181,25 +181,36 @@
 
       >
         <!-- File -->
-        <div v-if="msg.filePath" class="mb-2">
-          <a
-            :href="msg.filePath"
-            target="_blank"
-            class="flex items-center space-x-2 p-2 rounded-lg transition"
-            :class="msg.senderId === userId ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-50 hover:bg-gray-100'"
-          >
-            <div class="p-2 rounded-lg" :class="msg.senderId === userId ? 'bg-white/30' : 'bg-orange-100'">
-              <svg class="w-4 h-4" :class="msg.senderId === userId ? 'text-white' : 'text-orange-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-              </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium truncate">File đính kèm</p>
-              <p class="text-xs opacity-75">Nhấn để tải xuống</p>
-            </div>
-          </a>
-        </div>
+        <!-- Image Preview -->
+<div v-if="msg.filePath && isImage(msg.filePath)" class="mb-2">
+  <img
+    :src="msg.filePath"
+    class="rounded-xl max-w-[220px] shadow cursor-pointer"
+    @click="window.open(msg.filePath, '_blank')"
+  />
+</div>
+
+<!-- File Attachment (non-image) -->
+<div v-else-if="msg.filePath" class="mb-2">
+  <a
+    :href="msg.filePath"
+    target="_blank"
+    class="flex items-center space-x-2 p-2 rounded-lg transition"
+    :class="msg.senderId === userId ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-50 hover:bg-gray-100'"
+  >
+    <div class="p-2 rounded-lg" :class="msg.senderId === userId ? 'bg-white/30' : 'bg-orange-100'">
+      <svg class="w-4 h-4" :class="msg.senderId === userId ? 'text-white' : 'text-orange-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+      </svg>
+    </div>
+    <div class="flex-1 min-w-0">
+      <p class="text-sm font-medium truncate">File đính kèm</p>
+      <p class="text-xs opacity-75">Nhấn để tải xuống</p>
+    </div>
+  </a>
+</div>
+
 
         <!-- Message Text -->
         <p v-if="msg.content" class="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
@@ -292,7 +303,7 @@
 
 <script setup>
 import { ref, computed } from "vue";
-
+import { watch, nextTick } from "vue";
 const props = defineProps({
   chatList: Array,
   messages: Array,
@@ -302,6 +313,17 @@ const props = defineProps({
   inputModel: String,
   uploadingFile: Boolean,
 });
+
+watch(
+  () => props.messages,
+  async () => {
+    await nextTick();
+    if (msgBox.value) {
+      msgBox.value.scrollTop = msgBox.value.scrollHeight;
+    }
+  },
+  { deep: true }
+);
 
 const emit = defineEmits(["send", "typing", "scroll", "file", "select", "update:inputModel"]);
 
@@ -325,6 +347,10 @@ const filteredChats = computed(() => {
     return name.includes(q);
   });
 });
+const isImage = (filePath) => {
+  if (!filePath) return false;
+  return /\.(jpg|jpeg|png|gif|webp)$/i.test(filePath);
+};
 
 const onFileUpload = (e) => {
   const file = e.target.files[0];
