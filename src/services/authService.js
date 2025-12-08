@@ -8,7 +8,7 @@ let api = null
 const getApiInstance = () => {
   if (!api) {
     const config = useRuntimeConfig()
-    const baseURL = config.public.apiBase || 'http://localhost:3000'
+    const baseURL = config.public.apiBase || 'https://www.pepnguyen.id.vn'
 
     api = axios.create({
       baseURL,
