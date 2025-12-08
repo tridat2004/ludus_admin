@@ -223,14 +223,21 @@
             </div>
 
             <div>
-              <label class="form-label required">Màu sắc</label>
-              <input v-model="formData.color" type="text" class="form-input" placeholder="VD: Đen, Trắng..." required>
-            </div>
+  <label class="form-label required">Màu sắc</label>
+  <select v-model="formData.color" class="form-select" required>
+    <option value="">-- Chọn màu --</option>
+    <option v-for="c in productColors" :key="c" :value="c">{{ c }}</option>
+  </select>
+</div>
 
-            <div>
-              <label class="form-label required">Kích cỡ</label>
-              <input v-model="formData.size" type="text" class="form-input" placeholder="VD: S, M, L..." required>
-            </div>
+<div>
+  <label class="form-label required">Kích cỡ</label>
+  <select v-model="formData.size" class="form-select" required>
+    <option value="">-- Chọn size --</option>
+    <option v-for="s in productSizes" :key="s" :value="s">{{ s }}</option>
+  </select>
+</div>
+
 
             <div>
               <label class="form-label required">Giá (VNĐ)</label>
@@ -339,6 +346,18 @@ const formData = ref({
   stockQuantity: 0,
   isActive: true
 })
+
+const selectedProduct = computed(() =>
+  products.value.find(p => (p._id || p.id) === selectedProductId.value)
+)
+
+const productSizes = computed(() =>
+  selectedProduct.value?.sizes || []
+)
+
+const productColors = computed(() =>
+  selectedProduct.value?.colors || []
+)
 
 // Fetch products
 const fetchProducts = async () => {
@@ -496,33 +515,55 @@ const confirmDelete = async (variant) => {
 }
 
 const saveVariant = async () => {
-  saving.value = true
-  try {
-    if (!editingVariant.value && !imageFile.value) throw new Error('Hình ảnh sản phẩm là bắt buộc')
-    const form = new FormData()
-    form.append('color', formData.value.color)
-    form.append('size', formData.value.size)
-    form.append('variantPrice', formData.value.variantPrice)
-    form.append('stockQuantity', formData.value.stockQuantity)
-    if (imageFile.value) form.append('variantImageUrl', imageFile.value)
+    saving.value = true;
+    
+    try {
+        // Validate ảnh khi tạo mới
+        if (!editingVariant.value && !imageFile.value) {
+            throw new Error('Hình ảnh sản phẩm là bắt buộc')
+        }
 
-    if (editingVariant.value) {
-      const variantId = editingVariant.value._id || editingVariant.value.id
-      await updateProductVariant(variantId, form)
-      success('Cập nhật biến thể thành công')
-    } else {
-      await createProductVariant(selectedProductId.value, form)
-      success('Thêm biến thể thành công')
+        // ✅ Simple validations
+        if (formData.value.stockQuantity < 0) {
+            error('Số lượng không được âm');
+            return;
+        }
+
+        if (formData.value.variantPrice < 0) {
+            error('Giá không được âm');
+            return;
+        }
+
+        // Gửi API
+        const form = new FormData()
+        form.append('color', formData.value.color)
+        form.append('size', formData.value.size)
+        form.append('variantPrice', formData.value.variantPrice)
+        form.append('stockQuantity', formData.value.stockQuantity)
+        if (imageFile.value) form.append('variantImageUrl', imageFile.value)
+
+        if (editingVariant.value) {
+            await updateProductVariant(
+                editingVariant.value._id || editingVariant.value.id, 
+                form
+            )
+            success('Cập nhật biến thể thành công')
+        } else {
+            await createProductVariant(selectedProductId.value, form)
+            success('Thêm biến thể thành công')
+        }
+
+        await fetchProductVariants(selectedProductId.value)
+        closeModal()
+
+    } catch(err) {
+        console.error('Save error:', err)
+        error(err.response?.data?.message || err.message)
+    } finally {
+        saving.value = false
     }
-    await fetchProductVariants(selectedProductId.value)
-    closeModal()
-  } catch (err) {
-    console.error('Save error:', err)
-    error('Lỗi lưu biến thể: ' + (err.response?.data?.message || err.message))
-  } finally {
-    saving.value = false
-  }
 }
+
 
 const closeModal = () => {
   showAddModal.value = false

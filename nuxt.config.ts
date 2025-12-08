@@ -40,11 +40,11 @@ export default defineNuxtConfig({
       ]
     }
   },
-
+// https://www.pepnguyen.id.vn
   runtimeConfig: {
     apiSecret: '',
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_URL || 'https://www.pepnguyen.id.vn'
+      apiBase: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:3000'
       
     }
   },

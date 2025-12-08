@@ -739,10 +739,11 @@ const saveProduct = async () => {
     stockQuantity: formData.value.stockQuantity,
     productCode: formData.value.productCode,
     isActive: formData.value.isActive,
-    sizes: formData.value.sizes[0]?.split(',').map(s => s.trim()).filter(Boolean) || [],
-    colors: formData.value.colors[0]?.split(',').map(c => c.trim()).filter(Boolean) || [],
+    sizes: formData.value.sizes,     // <-- FIXED
+    colors: formData.value.colors,   // <-- FIXED
     file: mainFile.value
-  }
+}
+
 
   saving.value = true
   try {
