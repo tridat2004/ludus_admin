@@ -17,7 +17,7 @@
           </div>
         </div>
 
-        <!-- Search Bar -->
+        <!-- Search Bar 
         <div class="hidden md:flex items-center max-w-md w-full mx-8">
           <div class="relative w-full">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -31,14 +31,14 @@
             >
           </div>
         </div>
-
+-->
         <!-- Right Menu -->
         <div class="flex items-center space-x-4">
-          <!-- Notifications -->
+          <!-- Notifications 
           <button class="relative text-gray-600 hover:text-gray-900" @click="reset">
   <BellIcon class="h-6 w-6" />
-
-  <!-- Hiển thị badge -->
+-->
+  <!-- Hiển thị badge
   <span
     v-if="badgeCount > 0"
     class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center"
@@ -46,12 +46,9 @@
     <span class="text-white text-xs">{{ badgeCount }}</span>
   </span>
 </button>
-
+ -->
           <!-- Quick Actions -->
-          <button class="text-gray-600 hover:text-gray-900">
-            <PlusIcon class="h-6 w-6" />
-          </button>
-
+         
           <!-- Profile -->
           <div class="relative">
             <button @click="showProfileMenu = !showProfileMenu" class="flex items-center space-x-2 text-gray-700 hover:text-gray-900">
