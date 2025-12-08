@@ -280,21 +280,21 @@ const logout = () => {
 const mainNavigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon, badge: null },
   { name: 'Đơn hàng', href: '/orders', icon: ShoppingCartIcon, badge: null }, // Bỏ badge: '12'
-  { name: 'Khách hàng', href: '/customers', icon: UsersIcon, badge: null },
+  //{ name: 'Khách hàng', href: '/customers', icon: UsersIcon, badge: null },
 ]
 
 const managementNavigation = [
   { name: 'Sản phẩm', href: '/product', icon: ShoppingBagIcon },
   { name: 'Danh mục', href: '/category', icon: TagIcon },
   { name: 'Biến thể sản phẩm', href: '/product-variant', icon: DocumentTextIcon },
-  { name: 'Đánh giá', href: '/reviews', icon: StarIcon },
+  //{ name: 'Đánh giá', href: '/reviews', icon: StarIcon },
 ]
 
 const toolsNavigation = [
   { name: 'Mã giảm giá', href: '/voucher', icon: GiftIcon },
-  { name: 'Thanh toán', href: '/payments', icon: CreditCardIcon },
+  //{ name: 'Thanh toán', href: '/payments', icon: CreditCardIcon },
   { name: 'Phương thức TT', href: '/payment-methods', icon: CreditCardIcon },
-  { name: 'Địa chỉ KH', href: '/addresses', icon: MapPinIcon },
+  //{ name: 'Địa chỉ KH', href: '/addresses', icon: MapPinIcon },
   { name: 'Giỏ hàng', href: '/carts', icon: ShoppingCartIcon },
    { name: 'Tin nhắn', href: '/messages', icon: ChatBubbleLeftIcon, badgeKey: "messages" },
   { name: 'Báo cáo', href: '/reports', icon: ChartBarIcon },
